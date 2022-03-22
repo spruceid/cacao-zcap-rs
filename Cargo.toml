@@ -1,0 +1,31 @@
+[package]
+name = "cacao-zcap"
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+readme = "README.md"
+authors = ["Spruce Systems, Inc."]
+categories = ["authorization"]
+keywords = ["linked-data", "zcap", "cacao", "authorization"]
+description = "Integration of CACAO with ZCAP"
+repository = "https://github.com/spruceid/cacao-zcap/"
+
+[dependencies]
+ssi = { version = ">=0.3, <0.5", path = "../ssi" }
+cacao = { path = "../cacao-rs" }
+uint = "=0.9.1"
+chrono = "0.4"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"
+siwe = { version = "0.1" }
+async-std = { version = "1.9", features = ["attributes"] }
+async-trait = "0.1"
+multibase = "0.8"
+hex = "0.4"
+anyhow = "1.0"
+iri-string = { version = "0.4", features = ["serde", "serde-std"] }
+percent-encoding = "2.1"
+
+[dev-dependencies]
+pretty_assertions = "1.2"

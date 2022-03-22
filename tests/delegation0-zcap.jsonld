@@ -1,0 +1,27 @@
+{
+  "@context": [
+    "https://w3id.org/security/v2",
+    "https://demo.didkit.dev/2022/cacao-zcap/context/v1.json"
+  ],
+  "type": "CacaoZcap2022",
+  "id": "urn:uuid:5fa2f8cc-fea0-4280-b98c-99f0acecf0e1",
+  "parentCapability": "urn:zcap:root:kepler%3A%2F%2Fmy_orbit",
+  "invocationTarget": "kepler://my_orbit",
+  "invoker": "did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp",
+  "expires": "2022-03-14T13:32:42.763Z",
+  "cacaoPayloadType": "eip4361",
+  "cacaoStatement": "Allow access to your Kepler orbit",
+  "proof": {
+    "type": "CacaoZcapProof2022",
+    "proofPurpose": "capabilityDelegation",
+    "domain": "app.domain.com",
+    "nonce": "h8yQTdScwt9pTyaQa",
+    "cacaoSignatureType": "eip191",
+    "proofValue": "f0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+    "verificationMethod": "did:pkh:eip155:1:0x98626187d3b8e1f7c5b246ee443a07579b5923ac#blockchainAccountId",
+    "created": "2022-03-14T13:30:42.763Z",
+    "capabilityChain": [
+      "urn:zcap:root:kepler%3A%2F%2Fmy_orbit"
+    ]
+  }
+}

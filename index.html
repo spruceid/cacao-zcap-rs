@@ -1,0 +1,278 @@
+<!doctype html>
+<html>
+<head>
+	<title>CACAO-ZCAP</title>
+	<meta charset=utf-8>
+	<style>
+section:target {
+	outline: .5ex solid #ff9;
+}
+.mapping-table td:nth-child(2) {
+	text-align: center;
+}
+	</style>
+</head>
+<body>
+	<h1>CACAO-ZCAP</h1>
+	<h2>Integration of CACAO with ZCAP</h2>
+	<p>This document: <a href="https://demo.didkit.dev/2022/cacao-zcap/">https://demo.didkit.dev/2022/cacao-zcap/</a></p>
+	<p>Source: <a href="https://github.com/spruceid/cacao-zcap">https://github.com/spruceid/cacao-zcap</a></p>
+	<p>This document is licensed under a <a ref="license" href="https://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution 4.0 International License</a>.
+
+	<section id="abstract">
+	<h2><a href="#abstract">Abstract</a></h2>
+	</section>
+
+	<section id="sotd">
+	<h2><a href="#sotd">Status of This Document</a></h2>
+	<p>This document is an experimental draft specification.</p>
+	</section>
+
+	<section id="context">
+	<h2><a href="#context">Context</a></h2>
+	<p><a href="https://www.w3.org/TR/json-ld11/#dfn-context">JSON-LD Context</a> file: <a href="https://demo.didkit.dev/2022/cacao-zcap/context/v1.json">https://demo.didkit.dev/2022/cacao-zcap/context/v1.json</a></p>
+	<p>This context file is expected to be used in <code>@context</code> following the Security Vocabulary context (<a href="https://w3id.org/security/v2">https://w3id.org/security/v2</a>).</p>
+	</section>
+
+	<section id="cacao-zcap-mapping">
+	<h2><a href="#cacao-zcap-mapping">CACAO-ZCAP Mapping</a></h2>
+	<table class="mapping-table">
+		<thead>
+			<tr>
+				<th>CACAO property</th>
+				<th>Relationship/Value</th>
+				<th>ZCAP property</th>
+				<th>Required?</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td>h.t</td>
+				<td>=</td>
+				<td>cacaoPayloadType</td>
+				<td>yes</td>
+			</tr>
+
+			<tr>
+				<td>p.domain</td>
+				<td>=</td>
+				<td>proof.domain</td>
+				<td>yes</td>
+			</tr>
+
+			<tr>
+				<td>p.iss</td>
+				<td>DID &harr; DID URL</td>
+				<td>proof.verificationMethod</td>
+				<td>yes</td>
+			</tr>
+
+			<tr>
+				<td>p.aud</td>
+				<td>=</td>
+				<td>invoker</td>
+				<td>yes</td>
+			</tr>
+
+			<tr>
+				<td>p.version</td>
+				<td>"1"</td>
+				<td>&ndash;</td>
+				<td>yes</td>
+			</tr>
+
+			<tr>
+				<td>&ndash;</td>
+				<td><a href="#context">[...]</a></td>
+				<td>@context</td>
+				<td>yes</td>
+			</tr>
+
+			<tr>
+				<td>&ndash;</td>
+				<td>"CacaoZcap2022"</td>
+				<td>type</td>
+				<td>yes</td>
+			</tr>
+
+			<tr>
+				<td>&ndash;</td>
+				<td>"CacaoZcapProof2022"</td>
+				<td>proof.type</td>
+				<td>yes</td>
+			</tr>
+
+			<tr>
+				<td>p.nonce</td>
+				<td>=</td>
+				<td>proof.nonce</td>
+				<td>yes</td>
+			</tr>
+
+			<tr>
+				<td>p.iat</td>
+				<td>=</td>
+				<td>proof.created</td>
+				<td>yes</td>
+			</tr>
+
+			<tr>
+				<td>p.nbf</td>
+				<td>=</td>
+				<td>proof.validFrom</td>
+				<td>no</td>
+			</tr>
+
+			<tr>
+				<td>p.exp</td>
+				<td>=</td>
+				<td>expires</td>
+				<td>no</td>
+			</tr>
+
+			<tr>
+				<td>p.statement</td>
+				<td>=</td>
+				<td>cacaoStatement</td>
+				<td>no</td>
+			</tr>
+
+			<tr>
+				<td>p.requestId</td>
+				<td>=</td>
+				<td>id</td>
+				<td>no</td>
+			</tr>
+
+			<tr>
+				<td>p.resources[0]</td>
+				<td>=</td>
+				<td>invocationTarget</td>
+				<td>yes</td>
+			</tr>
+
+			<tr>
+				<td>p.resources[0]</td>
+				<td>URL &harr; ZCAP Root URN</td>
+				<td>proof.capabilityChain[0]</td>
+				<td>no</td>
+			</tr>
+
+			<tr>
+				<td>p.resources[1..]</td>
+				<td>=</td>
+				<td>proof.capabilityChain[1..]</td>
+				<td>no</td>
+			</tr>
+
+			<tr>
+				<td>s.t</td>
+				<td>=</td>
+				<td>proof.cacaoSignatureType</td>
+				<td>yes</td>
+			</tr>
+
+			<tr>
+				<td>s.s</td>
+				<td>bytes &harr; multibase</td>
+				<td>proof.proofValue</td>
+				<td>no</td>
+			</tr>
+
+		</tbody>
+	</table>
+	</section>
+
+	<section id="terms">
+	<h2><a href="#terms">Terms</a></h2>
+	<p>This document defines the following terms, in the namespace <code>https://demo.didkit.dev/2022/cacao-zcap/#</code>.</p>
+
+	<section id="CacaoZcap2022">
+	<h3><a href="#CacaoZcap2022">CacaoZcap2022</a></h3>
+	<p>A CACAO interpreted as an authorization capability delegation.</p>
+	<p>The <code>proof</code> property should be an object of type <a href="#CacaoZcapProof2022">CacaoZcapProof2022</a>. The <code>invocationTarget</code> property should be the URL to which an entity is being authorized access.</p>
+        <dl>
+		<dt><a href="https://www.w3.org/2003/06/sw-vocab-status/note.html#vocab">Status</a></dt>
+		<dd>unstable</dd>
+		<dt>Expected properties</dt>
+		<dd>
+			<a href="http://www.w3.org/1999/02/22-rdf-syntax-ns#type">type</a>,
+			<a href="https://w3id.org/security#parentCapability">parentCapability</a>,
+			<a href="https://w3id.org/security#invocationTarget">invocationTarget</a>,
+			<a href="https://w3id.org/security#expiration">expires</a>,
+			<a href="#cacaoStatement">cacaoStatement</a>,
+			<a href="https://w3id.org/security#proof">proof</a>
+		</dd>
+        </dl>
+	</section>
+
+	<section id="CacaoZcapProof2022">
+	<h3><a href="#CacaoZcapProof2022">CacaoZcapProof2022</a></h3>
+	<p>A <a href="https://w3c-ccg.github.io/data-integrity-spec/#proofs">data integrity proof</a> over an authorization capability delegation document (<a href="#CacaoZcap2022">CacaoZcap2022</a>), together representing a CACAO.</p>
+        <dl>
+		<dt><a href="https://www.w3.org/2003/06/sw-vocab-status/note.html#vocab">Status</a></dt>
+		<dd>unstable</dd>
+		<dt>Expected properties</dt>
+		<dd>
+			<a href="http://www.w3.org/1999/02/22-rdf-syntax-ns#type">type</a>,
+			<a href="http://purl.org/dc/terms/created">created</a>,
+			<a href="https://w3id.org/security#verificationMethod">verificationMethod</a>,
+			<a href="https://w3id.org/security#proofPurpose">proofPurpose</a>,
+			<a href="https://w3id.org/security#proofValue">proofValue</a>,
+			<a href="https://w3id.org/security#domain">domain</a>,
+			<a href="https://w3id.org/security#nonce">nonce</a>,
+			<a href="https://w3id.org/security#capabilityChain">capabilityChain</a>,
+			<a href="#cacaoPayloadType">cacaoPayloadType</a>,
+			<a href="#cacaoSignatureType">cacaoSignatureType</a>
+		</dd>
+        </dl>
+	</section>
+
+	<section id="cacaoPayloadType">
+	<h3><a href="#cacaoPayloadType">cacaoPayloadType</a></h3>
+	<p>CACAO payload format type (CACAO header "t" value). e.g. "eip4361".</p>
+        <dl>
+		<dt><a href="https://www.w3.org/2003/06/sw-vocab-status/note.html#vocab">Status</a></dt>
+		<dd>unstable</dd>
+		<dt>Expected type</dt>
+		<dd><a href="https://www.w3.org/TR/xmlschema11-2/#string">xsd:string</a></dd>
+	</dl>
+	</section>
+
+	<section id="cacaoSignatureType">
+	<h3><a href="#cacaoSignatureType">cacaoSignatureType</a></h3>
+	<p>CACAO signature type (CACAO signature "t" value). e.g. "eip191" or "eip1271".</p>
+        <dl>
+		<dt><a href="https://www.w3.org/2003/06/sw-vocab-status/note.html#vocab">Status</a></dt>
+		<dd>unstable</dd>
+		<dt>Expected type</dt>
+		<dd><a href="https://www.w3.org/TR/xmlschema11-2/#string">xsd:string</a></dd>
+	</dl>
+	</section>
+
+	<section id="cacaoStatement">
+	<h3><a href="#cacaoStatement">cacaoStatement</a></h3>
+	<p>CACAO statement (CACAO payload "statement" value).</p>
+        <dl>
+		<dt><a href="https://www.w3.org/2003/06/sw-vocab-status/note.html#vocab">Status</a></dt>
+		<dd>unstable</dd>
+		<dt>Expected type</dt>
+		<dd><a href="https://www.w3.org/TR/xmlschema11-2/#string">xsd:string</a></dd>
+	</dl>
+	</section>
+
+	</section>
+
+	<section id="references">
+	<h2><a href="#references">References</a></h2>
+	<ul>
+		<li><a href="https://github.com/ChainAgnostic/CAIPs/blob/8fdb5bfd1bdf15c9daf8aacfbcc423533764dfe9/CAIPs/caip-draft_cacao.md">CACAO: Chain Agnostic CApability Object</a></li>
+		<li><a href="https://w3c-ccg.github.io/zcap-spec/">Authorization Capabilities for Linked Data v0.3</a> (<a href="https://github.com/w3c-ccg/zcap-spec/blob/79244f3dab64e6486cb2212705f7f104bd7288a8/index.html">79244f3dab</a>)</li>
+		<li><a href="https://w3c-ccg.github.io/data-integrity-spec/">Data Integrity 1.0</a> (<a href="https://github.com/w3c-ccg/data-integrity-spec/blob/22263882b1cab0aee153fe3a0a3684da36dde36f/index.html">22263882b1</a>)</li>
+		<li><a href="https://w3c-ccg.github.io/security-vocab/">The Security Vocabulary</a> (<a href="https://github.com/w3c-ccg/security-vocab/blob/8152248f69a030ca3ca9ee5a66b8df70f42fece5/index.html">8152248f69</a>)</li>
+		<li><a href="https://datatracker.ietf.org/doc/html/draft-multiformats-multibase">The Multibase Data Format</a></li>
+	</ul>
+	</section>
+
+</body>
+</html>
