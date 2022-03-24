@@ -9,6 +9,7 @@
   "invocationTarget": "kepler://my_orbit",
   "invoker": "did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp",
   "expires": "2022-03-14T13:32:42.763Z",
+  "validFrom": "2022-03-14T13:31:42.763Z",
   "cacaoPayloadType": "eip4361",
   "cacaoStatement": "Allow access to your Kepler orbit",
   "proof": {
