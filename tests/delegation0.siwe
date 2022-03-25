@@ -3,7 +3,7 @@ app.domain.com wants you to sign in with your Ethereum account:
 
 Allow access to your Kepler orbit
 
-URI: did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp
+URI: did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp#z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp
 Version: 1
 Chain ID: 1
 Nonce: h8yQTdScwt9pTyaQa

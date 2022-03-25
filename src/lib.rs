@@ -1,10 +1,11 @@
 use async_trait::async_trait;
-use cacao::siwe::SignInWithEthereum;
+use cacao::siwe_cacao::SignInWithEthereum;
 use cacao::{BasicSignature, Header, Payload, SignatureScheme, Version as CacaoVersion, CACAO};
 use chrono::prelude::DateTime;
 use iri_string::types::UriString;
 use serde::{ser::Error, Deserialize, Serialize, Serializer};
 use serde_json::{json, Value};
+use siwe::TimeStamp;
 use ssi::did_resolve::DIDResolver;
 use ssi::error::Error as SSIError;
 use ssi::jsonld::SECURITY_V2_CONTEXT;
@@ -190,13 +191,13 @@ where
     let Payload {
         domain,
         iss: issuer,
-        statement,
+        statement: statement_opt,
         aud,
         version,
         nonce,
-        iat: iat_string,
-        exp: exp_string_opt,
-        nbf: nbf_string_opt,
+        iat,
+        exp: exp_opt,
+        nbf: nbf_opt,
         request_id: req_id_opt,
         resources,
     } = cacao.payload();
@@ -206,6 +207,14 @@ where
         _ => return Err(CacaoToZcapError::UnknownCacaoVersion),
     }
     let signature = cacao.signature();
+    let valid_from_opt = match nbf_opt {
+        Some(nbf) => Some(nbf.to_string()),
+        None => None,
+    };
+    let exp_string_opt = match exp_opt {
+        Some(ts) => Some(ts.to_string()),
+        None => None,
+    };
 
     let (header_type, signature_type) = get_header_and_signature_type(&header)?;
     let request_id = req_id_opt.as_ref().ok_or(CacaoToZcapError::MissingId)?;
@@ -233,7 +242,7 @@ where
         .to_string();
 
     let invoker_uri = URI::String(aud.as_str().to_string());
-    let created_datetime = DateTime::parse_from_rfc3339(&iat_string)
+    let created_datetime = DateTime::parse_from_rfc3339(&iat.to_string())
         .map_err(CacaoToZcapError::ParseIssuedAtDate)?
         .into();
 
@@ -262,10 +271,10 @@ where
     let delegation_extraprops = CacaoZcapExtraProps {
         r#type: String::from("CacaoZcap2022"),
         expires: exp_string_opt.clone(),
-        valid_from: nbf_string_opt.clone(),
+        valid_from: valid_from_opt,
         invocation_target: invocation_target.to_string(),
         cacao_payload_type: header_type.to_string(),
-        cacao_statement: Some(statement.to_string()),
+        cacao_statement: statement_opt.clone(),
     };
     let mut delegation = Delegation {
         context: Contexts::Many(vec![
@@ -301,10 +310,6 @@ pub enum ZcapToCacaoError {
     /// Delegation object is missing invoker property
     #[error("Delegation object is missing invoker property")]
     MissingInvoker,
-
-    /// Delegation object is missing cacaoStatement property
-    #[error("Delegation object is missing cacaoStatement property")]
-    MissingCacaoStatement,
 
     /// Proof object is missing signature (proofValue)
     #[error("Proof object is missing signature (proofValue)")]
@@ -395,6 +400,14 @@ pub enum ZcapToCacaoError {
     /// Unknown delegation type
     #[error("Unknown delegation type")]
     UnknownDelegationType,
+
+    /// Unable to parse validFrom timestamp
+    #[error("Unable to parse validFrom timestamp")]
+    UnableToParseValidFromTimestamp(chrono::format::ParseError),
+
+    /// Unable to parse expires timestamp
+    #[error("Unable to parse expires timestamp")]
+    UnableToParseExpiresTimestamp(chrono::format::ParseError),
 }
 
 /// Root URN for authorization capability
@@ -477,7 +490,7 @@ where
         r#type: zcap_type,
         invocation_target,
         expires: expires_opt,
-        valid_from: nbf_opt,
+        valid_from: valid_from_opt,
         cacao_payload_type,
         cacao_statement: cacao_statement_opt,
     } = zcap_extraprops;
@@ -516,11 +529,6 @@ where
         .ok_or(ZcapToCacaoError::MissingInvoker)?
         .to_string();
 
-    let statement = cacao_statement_opt
-        .as_ref()
-        .ok_or(ZcapToCacaoError::MissingCacaoStatement)?
-        .to_string();
-
     let sig_mb = proof
         .proof_value
         .as_ref()
@@ -537,7 +545,21 @@ where
     let created = created_opt
         .as_ref()
         .ok_or(ZcapToCacaoError::MissingProofCreated)?;
-    let iat = created.to_rfc3339_opts(chrono::SecondsFormat::AutoSi, true);
+    let iat = TimeStamp::from(created.clone());
+    let nbf_opt = match valid_from_opt {
+        Some(valid_from) => Some(
+            TimeStamp::from_str(valid_from)
+                .map_err(ZcapToCacaoError::UnableToParseValidFromTimestamp)?,
+        ),
+        None => None,
+    };
+    let exp_opt = match expires_opt {
+        Some(vcdt) => Some(
+            TimeStamp::from_str(&String::from(vcdt.clone()))
+                .map_err(ZcapToCacaoError::UnableToParseExpiresTimestamp)?,
+        ),
+        None => None,
+    };
     /// First value of capability chain is the root capability; that is decoded to get the
     /// invocation target which becomes the first value of the resources array.
     /// Remaining values of the capability chain are delegation capability ids, that are passed
@@ -583,15 +605,15 @@ where
     let payload = Payload {
         domain: domain.to_string().try_into().unwrap(),
         iss: issuer.try_into().map_err(ZcapToCacaoError::IssuerParse)?,
-        statement: statement.to_string(),
+        statement: cacao_statement_opt.clone(),
         aud: invoker
             .as_str()
             .try_into()
             .map_err(ZcapToCacaoError::InvokerParseAud)?,
         version: CacaoVersion::V1,
         nonce: nonce.to_string(),
-        iat: iat.to_string(),
-        exp: expires_opt.clone(),
+        iat: iat,
+        exp: exp_opt.clone(),
         nbf: nbf_opt.clone(),
         request_id: Some(id.to_string()),
         resources,
@@ -735,7 +757,7 @@ impl ProofSuite for CacaoZcapProof2022 {
 mod tests {
     use super::*;
     use pretty_assertions::assert_eq;
-    use siwe::eip4361::Message;
+    use siwe::Message;
 
     pub struct ExampleDIDPKH;
     use async_trait::async_trait;
@@ -812,7 +834,7 @@ mod tests {
 
     #[async_std::test]
     async fn siwe_verify() {
-        let message: Payload = Message::from_str(
+        let message = Message::from_str(
             r#"localhost:4361 wants you to sign in with your Ethereum account:
 0x6Da01670d8fc844e736095918bbE11fE8D564163
 
@@ -824,15 +846,15 @@ Chain ID: 1
 Nonce: kEWepMt9knR6lWJ6A
 Issued At: 2021-12-07T18:28:18.807Z"#,
         )
-        .unwrap()
-        .into();
+        .unwrap();
+        let payload = Payload::from(message);
         // Sanity check: verify signature
         let sig_mb = r#"f6228b3ecd7bf2df018183aeab6b6f1db1e9f4e3cbe24560404112e25363540eb679934908143224d746bbb5e1aa65ab435684081f4dbb74a0fec57f98f40f5051c"#;
         let (_base, sig) = multibase::decode(&sig_mb).unwrap();
         let sig = BasicSignature {
             s: sig.try_into().unwrap(),
         };
-        let cacao = CACAO::<SignInWithEthereum>::new(message, sig);
+        let cacao = CACAO::<SignInWithEthereum>::new(payload, sig);
         cacao.verify().await.unwrap();
         // This SIWE is not expected to be valid as a CACAO Zcap, but is here as an example that is
         // verifiable.
@@ -843,12 +865,12 @@ Issued At: 2021-12-07T18:28:18.807Z"#,
         let siwe_msg_str = include_str!("../tests/delegation0.siwe");
         let siwe_msg_sig_hex = include_str!("../tests/delegation0.siwe.sig");
         let siwe_msg = Message::from_str(siwe_msg_str).unwrap();
-        let message: Payload = siwe_msg.into();
+        let payload = Payload::from(siwe_msg);
         let (_base, sig) = multibase::decode(&format!("f{}", siwe_msg_sig_hex)).unwrap();
         let sig = BasicSignature {
             s: sig.try_into().unwrap(),
         };
-        let cacao = CACAO::<SignInWithEthereum>::new(message, sig);
+        let cacao = CACAO::<SignInWithEthereum>::new(payload, sig);
         let zcap = cacao_to_zcap(&cacao).unwrap();
         let zcap_json = serde_json::to_value(&zcap).unwrap();
         let zcap_json_expected: Value =
