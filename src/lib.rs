@@ -885,14 +885,16 @@ Issued At: 2021-12-07T18:28:18.807Z"#,
         let res = zcap.verify(None, &resolver).await;
         assert_eq!(res.errors, Vec::<String>::new());
         assert!(res.checks.iter().any(|c| c == &Check::Proof));
-
         */
+
+        /* Can't verify because signature is not real
         let proof = zcap.proof.as_ref().unwrap();
         let warnings = CacaoZcapProof2022
             .verify(proof, &zcap, &resolver)
             .await
             .unwrap();
         dbg!(warnings);
+        */
 
         // Convert back
         let cacao = zcap_to_cacao::<SignInWithEthereum>(&zcap).unwrap();
