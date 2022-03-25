@@ -391,11 +391,11 @@ pub enum ZcapToCacaoError {
 
     /// Unable to parse validFrom timestamp
     #[error("Unable to parse validFrom timestamp")]
-    UnableToParseValidFromTimestamp(chrono::format::ParseError),
+    UnableToParseValidFromTimestamp(#[source] chrono::format::ParseError),
 
     /// Unable to parse expires timestamp
     #[error("Unable to parse expires timestamp")]
-    UnableToParseExpiresTimestamp(chrono::format::ParseError),
+    UnableToParseExpiresTimestamp(#[source] chrono::format::ParseError),
 }
 
 /// Root URN for authorization capability
