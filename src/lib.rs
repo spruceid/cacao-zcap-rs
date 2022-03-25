@@ -1,18 +1,16 @@
 use async_trait::async_trait;
 use cacao::siwe_cacao::SignInWithEthereum;
-use cacao::{BasicSignature, Header, Payload, SignatureScheme, Version as CacaoVersion, CACAO};
+use cacao::{Header, Payload, SignatureScheme, Version as CacaoVersion, CACAO};
 use chrono::prelude::DateTime;
 use iri_string::types::UriString;
-use serde::{ser::Error, Deserialize, Serialize, Serializer};
-use serde_json::{json, Value};
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use siwe::TimeStamp;
 use ssi::did_resolve::DIDResolver;
 use ssi::error::Error as SSIError;
 use ssi::jsonld::SECURITY_V2_CONTEXT;
 use ssi::jwk::JWK;
-use ssi::ldp::{
-    resolve_vm, LinkedDataDocument, ProofPreparation, ProofSuite, VerificationWarnings,
-};
+use ssi::ldp::{LinkedDataDocument, ProofPreparation, ProofSuite, VerificationWarnings};
 use ssi::vc::{LinkedDataProofOptions, Proof, ProofPurpose, URI};
 use ssi::zcap::{Context, Contexts, Delegation};
 use std::collections::HashMap;
@@ -20,8 +18,8 @@ use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 use thiserror::Error;
 
-pub const PROOF_TYPE_2022: &'static str = "CacaoZcapProof2022";
-pub const CONTEXT_URL_V1: &'static str = "https://demo.didkit.dev/2022/cacao-zcap/context/v1.json";
+pub const PROOF_TYPE_2022: &str = "CacaoZcapProof2022";
+pub const CONTEXT_URL_V1: &str = "https://demo.didkit.dev/2022/cacao-zcap/context/v1.json";
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -175,8 +173,8 @@ fn get_header_and_signature_type(header: &Header) -> Result<(String, String), Ca
         .collect::<Vec<&str>>()
         .as_slice()
     {
-        [t1, t2] => return Ok((t1.to_string(), t2.to_string())),
-        _ => return Err(CacaoToZcapError::CombinedTypeParse),
+        [t1, t2] => Ok((t1.to_string(), t2.to_string())),
+        _ => Err(CacaoToZcapError::CombinedTypeParse),
     }
 }
 
@@ -207,24 +205,18 @@ where
         _ => return Err(CacaoToZcapError::UnknownCacaoVersion),
     }
     let signature = cacao.signature();
-    let valid_from_opt = match nbf_opt {
-        Some(nbf) => Some(nbf.to_string()),
-        None => None,
-    };
-    let exp_string_opt = match exp_opt {
-        Some(ts) => Some(ts.to_string()),
-        None => None,
-    };
+    let valid_from_opt = nbf_opt.as_ref().map(|nbf| nbf.to_string());
+    let exp_string_opt = exp_opt.as_ref().map(|ts| ts.to_string());
 
-    let (header_type, signature_type) = get_header_and_signature_type(&header)?;
+    let (header_type, signature_type) = get_header_and_signature_type(header)?;
     let request_id = req_id_opt.as_ref().ok_or(CacaoToZcapError::MissingId)?;
     let id = URI::String(request_id.to_string());
-    let (first_resource, secondary_resources) = match resources.into_iter() {
-        mut iter => (
-            iter.next().ok_or(CacaoToZcapError::MissingFirstResource)?,
-            iter,
-        ),
-    };
+    let mut iter = resources.iter();
+    let (first_resource, secondary_resources) = (
+        iter.next().ok_or(CacaoToZcapError::MissingFirstResource)?,
+        iter,
+    );
+
     let invocation_target = first_resource;
     let root_cap_urn = ZcapRootURN {
         target: first_resource.clone(),
@@ -254,7 +246,7 @@ where
     let proof_value_string = multibase::encode(multibase::Base::Base16Lower, signature);
     let proof_extraprops = CacaoZcapProofExtraProps {
         capability_chain,
-        cacao_signature_type: signature_type.to_string(),
+        cacao_signature_type: signature_type,
     }
     .into_property_set_opt()
     .map_err(CacaoToZcapError::ConvertProofExtraProps)?;
@@ -270,10 +262,10 @@ where
     };
     let delegation_extraprops = CacaoZcapExtraProps {
         r#type: String::from("CacaoZcap2022"),
-        expires: exp_string_opt.clone(),
+        expires: exp_string_opt,
         valid_from: valid_from_opt,
         invocation_target: invocation_target.to_string(),
-        cacao_payload_type: header_type.to_string(),
+        cacao_payload_type: header_type,
         cacao_statement: statement_opt.clone(),
     };
     let mut delegation = Delegation {
@@ -282,11 +274,7 @@ where
             Context::URI(URI::String(CONTEXT_URL_V1.into())),
         ]),
         invoker: Some(invoker_uri),
-        ..Delegation::new(
-            id,
-            URI::String(parent_capability_id.to_string()),
-            delegation_extraprops,
-        )
+        ..Delegation::new(id, URI::String(parent_capability_id), delegation_extraprops)
     };
     delegation.proof = Some(proof);
     Ok(delegation)
@@ -529,8 +517,7 @@ where
         .ok_or(ZcapToCacaoError::MissingInvoker)?
         .to_string();
 
-    let sig_mb = proof
-        .proof_value
+    let sig_mb = proof_value
         .as_ref()
         .ok_or(ZcapToCacaoError::MissingProofValue)?;
     let (_base, sig) =
@@ -545,7 +532,7 @@ where
     let created = created_opt
         .as_ref()
         .ok_or(ZcapToCacaoError::MissingProofCreated)?;
-    let iat = TimeStamp::from(created.clone());
+    let iat = TimeStamp::from(*created);
     let nbf_opt = match valid_from_opt {
         Some(valid_from) => Some(
             TimeStamp::from_str(valid_from)
@@ -554,23 +541,23 @@ where
         None => None,
     };
     let exp_opt = match expires_opt {
-        Some(vcdt) => Some(
-            TimeStamp::from_str(&String::from(vcdt.clone()))
+        Some(expires) => Some(
+            TimeStamp::from_str(expires)
                 .map_err(ZcapToCacaoError::UnableToParseExpiresTimestamp)?,
         ),
         None => None,
     };
-    /// First value of capability chain is the root capability; that is decoded to get the
-    /// invocation target which becomes the first value of the resources array.
-    /// Remaining values of the capability chain are delegation capability ids, that are passed
-    /// through into the resources array.
-    let (first_cap, secondary_caps) = match capability_chain.into_iter() {
-        mut iter => (
-            iter.next()
-                .ok_or(ZcapToCacaoError::ExpectedNonEmptyCapabilityChain)?,
-            iter,
-        ),
-    };
+    // First value of capability chain is the root capability; that is decoded to get the
+    // invocation target which becomes the first value of the resources array.
+    // Remaining values of the capability chain are delegation capability ids, that are passed
+    // through into the resources array.
+    let mut iter = capability_chain.into_iter();
+    let (first_cap, secondary_caps) = (
+        iter.next()
+            .ok_or(ZcapToCacaoError::ExpectedNonEmptyCapabilityChain)?,
+        iter,
+    );
+
     let root_cap_urn = ZcapRootURN::from_str(&first_cap).map_err(ZcapToCacaoError::RootURIParse)?;
     let root_target = root_cap_urn.target;
     let resources = vec![Ok(root_target.clone())]
@@ -612,9 +599,9 @@ where
             .map_err(ZcapToCacaoError::InvokerParseAud)?,
         version: CacaoVersion::V1,
         nonce: nonce.to_string(),
-        iat: iat,
-        exp: exp_opt.clone(),
-        nbf: nbf_opt.clone(),
+        iat,
+        exp: exp_opt,
+        nbf: nbf_opt,
         request_id: Some(id.to_string()),
         resources,
     };
@@ -628,11 +615,11 @@ pub struct CacaoZcapProof2022;
 impl ProofSuite for CacaoZcapProof2022 {
     async fn sign(
         &self,
-        document: &(dyn LinkedDataDocument + Sync),
-        options: &LinkedDataProofOptions,
+        _document: &(dyn LinkedDataDocument + Sync),
+        _options: &LinkedDataProofOptions,
         _resolver: &dyn DIDResolver,
-        key: &JWK,
-        extra_proof_properties: Option<HashMap<String, Value>>,
+        _key: &JWK,
+        _extra_proof_properties: Option<HashMap<String, Value>>,
     ) -> Result<Proof, SSIError> {
         Err(SSIError::NotImplemented)
         /*
@@ -756,8 +743,10 @@ impl ProofSuite for CacaoZcapProof2022 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use cacao::BasicSignature;
     use pretty_assertions::assert_eq;
     use siwe::Message;
+    use ssi::ldp::resolve_vm;
 
     pub struct ExampleDIDPKH;
     use async_trait::async_trait;
@@ -877,7 +866,7 @@ Issued At: 2021-12-07T18:28:18.807Z"#,
             serde_json::from_str(include_str!("../tests/delegation0-zcap.jsonld")).unwrap();
         assert_eq!(zcap_json, zcap_json_expected);
 
-        let resolver = ExampleDIDPKH;
+        let _resolver = ExampleDIDPKH;
         // Verify cacao as zcap
         /* Can't call zcap.verify yet because that depends on ssi
          * having this proof type.
