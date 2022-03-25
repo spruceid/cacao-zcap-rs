@@ -877,42 +877,26 @@ Issued At: 2021-12-07T18:28:18.807Z"#,
             serde_json::from_str(include_str!("../tests/delegation0-zcap.jsonld")).unwrap();
         assert_eq!(zcap_json, zcap_json_expected);
 
+        let resolver = ExampleDIDPKH;
         // Verify cacao as zcap
         /* Can't call zcap.verify yet because that depends on ssi
          * having this proof type.
         use ssi::vc::Check;
-        let resolver = ExampleDIDPKH;
         let res = zcap.verify(None, &resolver).await;
         assert_eq!(res.errors, Vec::<String>::new());
         assert!(res.checks.iter().any(|c| c == &Check::Proof));
 
+        */
         let proof = zcap.proof.as_ref().unwrap();
         let warnings = CacaoZcapProof2022
             .verify(proof, &zcap, &resolver)
             .await
             .unwrap();
         dbg!(warnings);
-        */
 
         // Convert back
         let cacao = zcap_to_cacao::<SignInWithEthereum>(&zcap).unwrap();
         let msg: Message = cacao.payload().clone().try_into().unwrap();
         assert_eq!(msg.to_string(), siwe_msg_str);
-
-        // TODO: test this other one
-        let siwe_msg_str_2 = r#"app.domain.com wants you to sign in with your Ethereum account:
-0x98626187D3B8e1F7C5b246eE443a07579b5923Ac
-
-Authorize an action on your Kepler Orbit
-
-URI: kepler://my_orbit
-Version: 1
-Chain ID: 1
-Nonce: oSBq10JvMogdg5xmZ
-Issued At: 2022-03-14T13:30:42.764Z
-Expiration Time: 2022-03-14T13:30:52.764Z
-Resources:
-- kepler://my_orbit/s3#post
-- kepler://my_orbit/s3#get"#;
     }
 }
