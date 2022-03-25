@@ -13,7 +13,7 @@ Licensed under either of
 
 at your option.
 
-The [specification draft](./index.html) and [context files](contexts/v1.json) are additionally licensed under
+The [specification draft](./index.html) and [context files](context/v1.json) are additionally licensed under
 
  * Creative Commons Attribution 4.0 International License ([LICENSE-CC-BY-4.0](LICENSE-CC-BY-4.0) or https://creativecommons.org/licenses/by/4.0/)
 
