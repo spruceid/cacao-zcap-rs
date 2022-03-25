@@ -23,6 +23,7 @@ pub const CONTEXT_URL_V1: &str = "https://demo.didkit.dev/2022/cacao-zcap/contex
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
+#[serde(deny_unknown_fields)]
 pub struct CacaoZcapExtraProps {
     /// Type of Delegation
     pub r#type: String,
@@ -69,6 +70,7 @@ pub struct CacaoZcapExtraProps {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
+#[serde(deny_unknown_fields)]
 pub struct CacaoZcapProofExtraProps {
     /// Capability chain
     ///
@@ -389,6 +391,10 @@ pub enum ZcapToCacaoError {
     #[error("Unknown delegation type")]
     UnknownDelegationType,
 
+    /// Unknown delegation proof type
+    #[error("Unknown delegation proof type")]
+    UnknownDelegationProofType,
+
     /// Unable to parse validFrom timestamp
     #[error("Unable to parse validFrom timestamp")]
     UnableToParseValidFromTimestamp(#[source] chrono::format::ParseError),
@@ -396,6 +402,21 @@ pub enum ZcapToCacaoError {
     /// Unable to parse expires timestamp
     #[error("Unable to parse expires timestamp")]
     UnableToParseExpiresTimestamp(#[source] chrono::format::ParseError),
+
+    /// Expected capabilityDelegation proof purpose but found something else
+    ///
+    /// [CacaoZcapProof2022] can only be used with proof purpose [CapabilityDelegation](ProofPurpose::CapabilityDelegation)
+    #[error("Expected capabilityDelegation proof purpose but found '{0:?}'")]
+    ExpectedCapabilityDelegationProofPurpose(Option<ProofPurpose>),
+
+    /// Unexpected CACAO types.
+    #[error("Unexpected CACAO types. Expected '{expected}' but found '{found}'")]
+    UnexpectedCACAOTypes {
+        /// The id pair for the [SignatureScheme] generic argument to [zcap_to_cacao]
+        expected: String,
+        /// The id pair found in the ZCAP properties ([CacaoZcapProofExtraProps::cacao_signature_type and [CacaoZcapExtraProps::cacao_payload_type])
+        found: String,
+    },
 }
 
 /// Root URN for authorization capability
@@ -491,6 +512,7 @@ where
         cacao_signature_type,
     } = proof_extraprops;
     let Proof {
+        type_: proof_type,
         proof_purpose,
         proof_value,
         verification_method: vm_opt,
@@ -501,6 +523,17 @@ where
     } = proof;
     if zcap_type != "CacaoZcap2022" {
         return Err(ZcapToCacaoError::UnknownDelegationType);
+    }
+    if proof_type != "CacaoZcapProof2022" {
+        return Err(ZcapToCacaoError::UnknownDelegationProofType);
+    }
+    let combined_type = format!("{}-{}", cacao_payload_type, cacao_signature_type);
+    let s_id = S::id();
+    if combined_type != s_id {
+        return Err(ZcapToCacaoError::UnexpectedCACAOTypes {
+            expected: s_id,
+            found: combined_type,
+        });
     }
 
     match contexts {
@@ -516,6 +549,12 @@ where
         .as_ref()
         .ok_or(ZcapToCacaoError::MissingInvoker)?
         .to_string();
+
+    if proof_purpose.as_ref() != Some(&ProofPurpose::CapabilityDelegation) {
+        return Err(ZcapToCacaoError::ExpectedCapabilityDelegationProofPurpose(
+            proof_purpose.clone(),
+        ));
+    }
 
     let sig_mb = proof_value
         .as_ref()
