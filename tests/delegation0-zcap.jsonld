@@ -3,26 +3,26 @@
     "https://w3id.org/security/v2",
     "https://demo.didkit.dev/2022/cacao-zcap/context/v1.json"
   ],
-  "type": "CacaoZcap2022",
-  "id": "urn:uuid:5fa2f8cc-fea0-4280-b98c-99f0acecf0e1",
-  "parentCapability": "urn:zcap:root:kepler%3A%2F%2Fmy_orbit",
-  "invocationTarget": "kepler://my_orbit",
-  "invoker": "did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp#z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp",
-  "expires": "2022-03-14T13:32:42.763Z",
-  "validFrom": "2022-03-14T13:31:42.763Z",
   "cacaoPayloadType": "eip4361",
   "cacaoStatement": "Allow access to your Kepler orbit",
+  "expires": "2022-03-14T13:32:42.763Z",
+  "id": "urn:uuid:5fa2f8cc-fea0-4280-b98c-99f0acecf0e1",
+  "invocationTarget": "kepler://my_orbit",
+  "invoker": "did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp#z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp",
+  "parentCapability": "urn:zcap:root:kepler%3A%2F%2Fmy_orbit",
   "proof": {
-    "type": "CacaoZcapProof2022",
-    "proofPurpose": "capabilityDelegation",
-    "domain": "app.domain.com",
-    "nonce": "h8yQTdScwt9pTyaQa",
     "cacaoSignatureType": "eip191",
-    "proofValue": "f0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
-    "verificationMethod": "did:pkh:eip155:1:0x98626187D3B8e1F7C5b246eE443a07579b5923Ac#blockchainAccountId",
-    "created": "2022-03-14T13:30:42.763Z",
     "capabilityChain": [
       "urn:zcap:root:kepler%3A%2F%2Fmy_orbit"
-    ]
-  }
+    ],
+    "created": "2022-03-14T13:30:42.763Z",
+    "domain": "app.domain.com",
+    "nonce": "h8yQTdScwt9pTyaQa",
+    "proofPurpose": "capabilityDelegation",
+    "proofValue": "f0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+    "type": "CacaoZcapProof2022",
+    "verificationMethod": "did:pkh:eip155:1:0x98626187D3B8e1F7C5b246eE443a07579b5923Ac#blockchainAccountId"
+  },
+  "type": "CacaoZcap2022",
+  "validFrom": "2022-03-14T13:31:42.763Z"
 }
