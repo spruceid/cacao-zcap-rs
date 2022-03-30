@@ -36,7 +36,7 @@ jobs:
       uses: actions/checkout@v2
       with:
         repository: spruceid/ssi
-        ref: ab332d1438fc53dff107020977d176c12899daf4
+        ref: ea4d9cfe92bd063c259550d483d7ed4d30009441
         path: ssi
 
     - name: Cache Cargo registry and build artifacts
