@@ -99,14 +99,14 @@ section:target {
 
 			<tr>
 				<td>&ndash;</td>
-				<td>"CacaoZcap2022"</td>
+				<td>"<a href="#CacaoZcap2022">CacaoZcap2022</a>"</td>
 				<td>type</td>
 				<td>yes</td>
 			</tr>
 
 			<tr>
 				<td>&ndash;</td>
-				<td>"CacaoZcapProof2022"</td>
+				<td>"<a href="#CacaoZcapProof2022">CacaoZcapProof2022</a>"</td>
 				<td>proof.type</td>
 				<td>yes</td>
 			</tr>
@@ -168,9 +168,16 @@ section:target {
 			</tr>
 
 			<tr>
-				<td>p.resources[1..]</td>
-				<td>=</td>
-				<td>proof.capabilityChain[1..]</td>
+				<td>p.resources[1..n-2]</td>
+				<td><a href="#intermediate-zcap-mapping">=</a></td>
+				<td>proof.capabilityChain[1..n-2]</td>
+				<td>no</td>
+			</tr>
+
+			<tr>
+				<td>p.resources[n-1]</td>
+				<td><a href="#previous-zcap-mapping">Object &harr; Data URI</a></td>
+				<td>proof.capabilityChain[n-1]</td>
 				<td>no</td>
 			</tr>
 
@@ -200,6 +207,17 @@ section:target {
 	<section id="root-zcap-mapping">
 	<h3><a href="#root-zcap-mapping">Root ZCAP mapping</a></h3>
 	<p>The first value of the CACAO payload resources array is used as the invocation target URI, that is the value of the zcap delegation's <code>invocationTarget</code> property. The invocation target URI is encoded into a root zcap URN to become the root capability id. The root zcap URN is constructed as the concatenation of <code>"urn:zcap:root:"</code> with <code>encodeURIComponent(invocationTarget)</code>. To transform the root zcap URN to the invocation target URI, the prefix <code>"urn:zcap:root:"</code> is removed and the remaining value is URL-decoded to return the invocation target id.</p>
+	</section>
+
+	<section id="intermediate-zcap-mapping">
+	<h3><a href="#intermediate-zcap-mapping">Intermediate ZCAP mapping</a></h3>
+	<p>If the proof <code>capabilityChain</code> array / CACAO resources array (<code>p.resources</code>) contain more than two elements,
+	the intermediate elements are passed through as URIs.</p>
+	</section>
+
+	<section id="previous-zcap-mapping">
+	<h3><a href="#previous-zcap-mapping">Previous ZCAP mapping</a></h3>
+	<p>The last value of the proof <code>capabilityChain</code> array / CACAO resources array (<code>p.resources</code>) represents the previous delegation. If the previous delegation is the root delegation, the <code>capabilityChain</code> array contains only the root delegation id, as a single value. If the previous delegation is a non-root delegation, the last value of the proof <code>capabilityChain</code> array is the previous delegation embedded as an object. The embedded previous delegation is represented in the last value of the CACAO resources array (<code>p.resources</code>) as a <a href="https://datatracker.ietf.org/doc/html/rfc2397">Data URI</a> containing the Base64-encoded JSON object serialized with <a href="https://www.rfc-editor.org/rfc/rfc8785">JSON Canonicalization Scheme (JCS)</a>.</p>
 	</section>
 
 	<section id="signature-proof-value-mapping">

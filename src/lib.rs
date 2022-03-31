@@ -68,6 +68,75 @@ pub struct CacaoZcapExtraProps {
     pub cacao_statement: Option<String>,
 }
 
+/// An item for [CacaoZcapProofExtraProps::capability_chain]
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+#[serde(untagged)]
+pub enum CapabilityChainItem {
+    Id(UriString),
+    Object(Delegation<(), CacaoZcapExtraProps>),
+}
+
+/// Error from converting to [Zcap to a CACAO](zcap_to_cacao)
+#[derive(Error, Debug)]
+pub enum CapToResourceError {
+    /// Unable to serialize delegation
+    #[error("Unable to serialize delegation")]
+    SerializeDelegation(#[source] serde_json::Error),
+
+    /// Unable to format capability chain item as URI
+    #[error("Unable to format capability chain item as URI")]
+    UriParse(#[source] iri_string::validate::Error),
+}
+
+#[derive(Error, Debug)]
+pub enum CapFromResourceError {
+    /// Expected JSON base64 data URI
+    #[error("Expected JSON base64 data URI")]
+    ExpectedBase64JsonDataUri,
+
+    /// Unable to parse JSON
+    #[error("Unable to parse JSON")]
+    JsonParse(#[source] serde_json::Error),
+
+    /// Unable to decode base64
+    #[error("Unable to decode base64")]
+    Base64Decode(#[source] base64::DecodeError),
+}
+
+impl CapabilityChainItem {
+    pub fn id(&self) -> &str {
+        match self {
+            Self::Id(string) => string.as_str(),
+            Self::Object(delegation) => delegation.id.as_str(),
+        }
+    }
+
+    pub fn as_resource_uri(&self) -> Result<UriString, CapToResourceError> {
+        match self {
+            Self::Id(id) => Ok(id.clone()),
+            Self::Object(delegation) => {
+                let json = serde_jcs::to_string(delegation)
+                    .map_err(CapToResourceError::SerializeDelegation)?;
+                let b64 = base64::encode(&json);
+                let uri_string = "data:application/json;base64,".to_string() + &b64;
+                UriString::from_str(&uri_string).map_err(CapToResourceError::UriParse)
+            }
+        }
+    }
+
+    pub fn from_resource_uri(uri: &UriString) -> Result<Self, CapFromResourceError> {
+        let uri_string = uri.to_string();
+        let b64_json = uri_string
+            .strip_prefix("data:application/json;base64,")
+            .ok_or(CapFromResourceError::ExpectedBase64JsonDataUri)?;
+        let json = base64::decode(b64_json).map_err(CapFromResourceError::Base64Decode)?;
+        let delegation: Delegation<(), CacaoZcapExtraProps> =
+            serde_json::from_slice(&json).map_err(CapFromResourceError::JsonParse)?;
+        Ok(Self::Object(delegation))
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 #[serde(deny_unknown_fields)]
@@ -75,7 +144,7 @@ pub struct CacaoZcapProofExtraProps {
     /// Capability chain
     ///
     /// <https://w3id.org/security#capabilityChain>
-    pub capability_chain: Vec<String>,
+    pub capability_chain: Vec<CapabilityChainItem>,
 
     /// CACAO signature type.
     ///
@@ -166,6 +235,21 @@ pub enum CacaoToZcapError {
     /// The first resource URI is the invocation target.
     #[error("Missing first resource")]
     MissingFirstResource,
+
+    /// Missing last resource
+    ///
+    /// CACAO-zcap must have last resource URI for the embedded previous delegation, unless
+    /// previous delegation is the root/target zcap.
+    #[error("Missing last resource")]
+    MissingLastResource,
+
+    /// Unable to convert resource URI to capability chain item
+    #[error("Unable to convert resource URI to capability chain item")]
+    CapFromResource(#[source] CapFromResourceError),
+
+    /// Unable to parse root capability id as URI
+    #[error("Unable to parse root capability id as URI")]
+    RootCapUriParse(#[source] iri_string::validate::Error),
 }
 
 fn get_header_and_signature_type(header: &Header) -> Result<(String, String), CacaoToZcapError> {
@@ -214,8 +298,9 @@ where
     let request_id = req_id_opt.as_ref().ok_or(CacaoToZcapError::MissingId)?;
     let id = URI::String(request_id.to_string());
     let mut iter = resources.iter();
-    let (first_resource, secondary_resources) = (
+    let (first_resource, last_resource, intermediate_resources) = (
         iter.next().ok_or(CacaoToZcapError::MissingFirstResource)?,
+        iter.next_back(),
         iter,
     );
 
@@ -224,14 +309,24 @@ where
         target: first_resource.clone(),
     };
     let root_cap_urn_string = root_cap_urn.to_string();
-    let capability_chain: Vec<String> = vec![root_cap_urn_string.clone()]
-        .into_iter()
-        .chain(secondary_resources.map(|r| r.to_string()))
-        .collect();
+    let root_cap_urn_uri = UriString::try_from(root_cap_urn_string.as_str())
+        .map_err(CacaoToZcapError::RootCapUriParse)?;
+    let previous_caps = match last_resource {
+        None => vec![],
+        Some(resource) => vec![CapabilityChainItem::from_resource_uri(resource)
+            .map_err(CacaoToZcapError::CapFromResource)?],
+    };
+    let capability_chain: Vec<CapabilityChainItem> =
+        vec![CapabilityChainItem::Id(root_cap_urn_uri)]
+            .into_iter()
+            .chain(intermediate_resources.cloned().map(CapabilityChainItem::Id))
+            .chain(previous_caps.into_iter())
+            .collect();
     let parent_capability_id = capability_chain
         .iter()
         .next_back()
         // capability_chain has at least one value, but using unwrap_or here anyway
+        .map(|cap| cap.id())
         .unwrap_or(&root_cap_urn_string)
         .to_string();
 
@@ -385,7 +480,7 @@ pub enum ZcapToCacaoError {
 
     /// Unable to parse resource as URI
     #[error("Unable to parse resource as URI")]
-    ResourceURIParse(#[source] iri_string::types::CreationError<String>),
+    ResourceURIParse(#[source] iri_string::validate::Error),
 
     /// Unknown delegation type
     #[error("Unknown delegation type")]
@@ -417,6 +512,10 @@ pub enum ZcapToCacaoError {
         /// The id pair found in the ZCAP properties ([CacaoZcapProofExtraProps::cacao_signature_type and [CacaoZcapExtraProps::cacao_payload_type])
         found: String,
     },
+
+    /// Unable to convert capability chain item to resource URI
+    #[error("Unable to convert capability chain item to resource URI")]
+    CapToResource(#[source] CapToResourceError),
 }
 
 /// Root URN for authorization capability
@@ -591,19 +690,30 @@ where
     // Remaining values of the capability chain are delegation capability ids, that are passed
     // through into the resources array.
     let mut iter = capability_chain.into_iter();
-    let (first_cap, secondary_caps) = (
+    let (first_cap, last_cap, intermediate_caps) = (
         iter.next()
             .ok_or(ZcapToCacaoError::ExpectedNonEmptyCapabilityChain)?,
+        iter.next_back(),
         iter,
     );
 
-    let root_cap_urn = ZcapRootURN::from_str(&first_cap).map_err(ZcapToCacaoError::RootURIParse)?;
+    let root_cap_urn =
+        ZcapRootURN::from_str(first_cap.id()).map_err(ZcapToCacaoError::RootURIParse)?;
     let root_target = root_cap_urn.target;
-    let resources = vec![Ok(root_target.clone())]
-        .into_iter()
-        .chain(secondary_caps.map(UriString::try_from))
-        .collect::<Result<Vec<UriString>, iri_string::types::CreationError<String>>>()
-        .map_err(ZcapToCacaoError::ResourceURIParse)?;
+    let last_cap_resources = match last_cap {
+        None => vec![],
+        Some(cap) => vec![Ok(cap
+            .as_resource_uri()
+            .map_err(ZcapToCacaoError::CapToResource)?)],
+    };
+    let resources =
+        vec![Ok(root_target.clone())]
+            .into_iter()
+            .chain(intermediate_caps.map(|cap| {
+                UriString::try_from(cap.id()).map_err(ZcapToCacaoError::ResourceURIParse)
+            }))
+            .chain(last_cap_resources.into_iter())
+            .collect::<Result<Vec<UriString>, ZcapToCacaoError>>()?;
 
     if invocation_target != root_target.as_str() {
         return Err(ZcapToCacaoError::InvocationTargetInternalMismatch {
@@ -923,6 +1033,32 @@ Issued At: 2021-12-07T18:28:18.807Z"#,
             .unwrap();
         dbg!(warnings);
         */
+
+        // Convert back
+        let cacao = zcap_to_cacao::<SignInWithEthereum>(&zcap).unwrap();
+        let msg: Message = cacao.payload().clone().try_into().unwrap();
+        assert_eq!(msg.to_string(), siwe_msg_str);
+    }
+
+    #[async_std::test]
+    async fn zcap_cacao_kepler_session_subdelegation() {
+        // Note: the delegation change is not verified currently. To make sense, it should be
+        // updated here so that the invoker in the first delegation is a PKH DID matches issuer of the
+        // second delegation.
+        let siwe_msg_str = include_str!("../tests/delegation1.siwe");
+        let siwe_msg_sig_hex = include_str!("../tests/delegation1.siwe.sig");
+        let siwe_msg = Message::from_str(siwe_msg_str).unwrap();
+        let message: Payload = siwe_msg.into();
+        let (_base, sig) = multibase::decode(&format!("f{}", siwe_msg_sig_hex)).unwrap();
+        let sig = BasicSignature {
+            s: sig.try_into().unwrap(),
+        };
+        let cacao = CACAO::<SignInWithEthereum>::new(message, sig);
+        let zcap = cacao_to_zcap(&cacao).unwrap();
+        let zcap_json = serde_json::to_value(&zcap).unwrap();
+        let zcap_json_expected: Value =
+            serde_json::from_str(include_str!("../tests/delegation1-zcap.jsonld")).unwrap();
+        assert_eq!(zcap_json, zcap_json_expected);
 
         // Convert back
         let cacao = zcap_to_cacao::<SignInWithEthereum>(&zcap).unwrap();
