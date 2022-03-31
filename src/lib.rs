@@ -73,17 +73,13 @@ pub struct CacaoZcapExtraProps {
 #[serde(rename_all = "camelCase")]
 #[serde(untagged)]
 pub enum CapabilityChainItem {
-    Id(String),
+    Id(UriString),
     Object(Delegation<(), CacaoZcapExtraProps>),
 }
 
 /// Error from converting to [Zcap to a CACAO](zcap_to_cacao)
 #[derive(Error, Debug)]
 pub enum CapToResourceError {
-    /// Unable to capability chain item id as URI
-    #[error("Unable to capability chain item id as URI")]
-    IdParse(#[source] iri_string::validate::Error),
-
     /// Unable to serialize delegation
     #[error("Unable to serialize delegation")]
     SerializeDelegation(#[source] serde_json::Error),
@@ -111,14 +107,14 @@ pub enum CapFromResourceError {
 impl CapabilityChainItem {
     pub fn id(&self) -> &str {
         match self {
-            Self::Id(string) => &string,
+            Self::Id(string) => string.as_str(),
             Self::Object(delegation) => delegation.id.as_str(),
         }
     }
 
     pub fn as_resource_uri(&self) -> Result<UriString, CapToResourceError> {
         match self {
-            Self::Id(id) => UriString::from_str(&id).map_err(CapToResourceError::IdParse),
+            Self::Id(id) => Ok(id.clone()),
             Self::Object(delegation) => {
                 let json = serde_jcs::to_string(delegation)
                     .map_err(CapToResourceError::SerializeDelegation)?;
@@ -247,8 +243,13 @@ pub enum CacaoToZcapError {
     #[error("Missing last resource")]
     MissingLastResource,
 
+    /// Unable to convert resource URI to capability chain item
     #[error("Unable to convert resource URI to capability chain item")]
     CapFromResource(#[source] CapFromResourceError),
+
+    /// Unable to parse root capability id as URI
+    #[error("Unable to parse root capability id as URI")]
+    RootCapUriParse(#[source] iri_string::validate::Error),
 }
 
 fn get_header_and_signature_type(header: &Header) -> Result<(String, String), CacaoToZcapError> {
@@ -308,15 +309,17 @@ where
         target: first_resource.clone(),
     };
     let root_cap_urn_string = root_cap_urn.to_string();
+    let root_cap_urn_uri = UriString::try_from(root_cap_urn_string.as_str())
+        .map_err(CacaoToZcapError::RootCapUriParse)?;
     let previous_caps = match last_resource {
         None => vec![],
         Some(resource) => vec![CapabilityChainItem::from_resource_uri(resource)
             .map_err(CacaoToZcapError::CapFromResource)?],
     };
     let capability_chain: Vec<CapabilityChainItem> =
-        vec![CapabilityChainItem::Id(root_cap_urn_string.clone())]
+        vec![CapabilityChainItem::Id(root_cap_urn_uri)]
             .into_iter()
-            .chain(intermediate_resources.map(|r| CapabilityChainItem::Id(r.to_string())))
+            .chain(intermediate_resources.cloned().map(CapabilityChainItem::Id))
             .chain(previous_caps.into_iter())
             .collect();
     let parent_capability_id = capability_chain
