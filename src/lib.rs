@@ -20,6 +20,7 @@ use thiserror::Error;
 
 pub const PROOF_TYPE_2022: &str = "CacaoZcapProof2022";
 pub const CONTEXT_URL_V1: &str = "https://demo.didkit.dev/2022/cacao-zcap/context/v1.json";
+pub const FIRST_RESOURCE: &str = "https://demo.didkit.dev/2022/cacao-zcap/#CacaoZcapResource2022";
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -231,10 +232,23 @@ pub enum CacaoToZcapError {
 
     /// Missing first resource
     ///
-    /// CACAO-zcap must have at least one resource URI.
-    /// The first resource URI is the invocation target.
+    /// CACAO-ZCAP must have at least two resource URIs.
+    /// The first resource URI is the CACAO-ZCAP type URI.
     #[error("Missing first resource")]
     MissingFirstResource,
+
+    /// Missing second resource
+    ///
+    /// CACAO-ZCAP must have at least two resource URIs.
+    /// The second resource URI is the invocation target.
+    #[error("Missing second resource")]
+    MissingSecondResource,
+
+    /// Unexpected first resource.
+    ///
+    /// Expected CACAO-ZCAP type identifier [FIRST_RESOURCE]
+    #[error("Unexpected first resource: {0}")]
+    UnexpectedFirstResource(String),
 
     /// Missing last resource
     ///
@@ -298,15 +312,25 @@ where
     let request_id = req_id_opt.as_ref().ok_or(CacaoToZcapError::MissingId)?;
     let id = URI::String(request_id.to_string());
     let mut iter = resources.iter();
-    let (first_resource, last_resource, intermediate_resources) = (
+    let (first_resource, second_resource, last_resource, intermediate_resources) = (
         iter.next().ok_or(CacaoToZcapError::MissingFirstResource)?,
+        iter.next().ok_or(CacaoToZcapError::MissingSecondResource)?,
         iter.next_back(),
         iter,
     );
 
-    let invocation_target = first_resource;
+    match first_resource.as_str() {
+        FIRST_RESOURCE => {
+            // Continue with the only type currently supported.
+        }
+        other => {
+            return Err(CacaoToZcapError::UnexpectedFirstResource(other.to_string()));
+        }
+    }
+
+    let invocation_target = second_resource;
     let root_cap_urn = ZcapRootURN {
-        target: first_resource.clone(),
+        target: invocation_target.clone(),
     };
     let root_cap_urn_string = root_cap_urn.to_string();
     let root_cap_urn_uri = UriString::try_from(root_cap_urn_string.as_str())
@@ -706,14 +730,17 @@ where
             .as_resource_uri()
             .map_err(ZcapToCacaoError::CapToResource)?)],
     };
-    let resources =
-        vec![Ok(root_target.clone())]
-            .into_iter()
-            .chain(intermediate_caps.map(|cap| {
-                UriString::try_from(cap.id()).map_err(ZcapToCacaoError::ResourceURIParse)
-            }))
-            .chain(last_cap_resources.into_iter())
-            .collect::<Result<Vec<UriString>, ZcapToCacaoError>>()?;
+    let resources = vec![
+        UriString::try_from(FIRST_RESOURCE).map_err(ZcapToCacaoError::ResourceURIParse),
+        Ok(root_target.clone()),
+    ]
+    .into_iter()
+    .chain(
+        intermediate_caps
+            .map(|cap| UriString::try_from(cap.id()).map_err(ZcapToCacaoError::ResourceURIParse)),
+    )
+    .chain(last_cap_resources.into_iter())
+    .collect::<Result<Vec<UriString>, ZcapToCacaoError>>()?;
 
     if invocation_target != root_target.as_str() {
         return Err(ZcapToCacaoError::InvocationTargetInternalMismatch {

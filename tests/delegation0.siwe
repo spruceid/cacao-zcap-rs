@@ -12,4 +12,5 @@ Expiration Time: 2022-03-14T13:32:42.763Z
 Not Before: 2022-03-14T13:31:42.763Z
 Request ID: urn:uuid:5fa2f8cc-fea0-4280-b98c-99f0acecf0e1
 Resources:
+- https://demo.didkit.dev/2022/cacao-zcap/#CacaoZcapResource2022
 - kepler://my_orbit
