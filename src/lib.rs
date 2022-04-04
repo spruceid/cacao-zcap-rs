@@ -1055,6 +1055,15 @@ Issued At: 2021-12-07T18:28:18.807Z"#,
         let cacao = CACAO::<SignInWithEthereum>::new(message, sig);
         let zcap = cacao_to_zcap(&cacao).unwrap();
         let zcap_json = serde_json::to_value(&zcap).unwrap();
+
+        // Ensure last resource matches parent
+        let parent_expected_str = include_str!("../tests/delegation0-zcap.jsonld");
+        let parent_expected_json: Value = serde_json::from_str(parent_expected_str).unwrap();
+        let last_resource = cacao.payload().resources.iter().next_back().unwrap();
+        let parent_capability = CapabilityChainItem::from_resource_uri(&last_resource).unwrap();
+        let parent_zcap_json = serde_json::to_value(parent_capability).unwrap();
+        assert_eq!(parent_zcap_json, parent_expected_json);
+
         let zcap_json_expected: Value =
             serde_json::from_str(include_str!("../tests/delegation1-zcap.jsonld")).unwrap();
         assert_eq!(zcap_json, zcap_json_expected);
