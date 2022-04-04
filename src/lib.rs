@@ -3,6 +3,7 @@ use cacao::siwe_cacao::SignInWithEthereum;
 use cacao::{Header, Payload, SignatureScheme, Version as CacaoVersion, CACAO};
 use chrono::prelude::DateTime;
 use iri_string::types::UriString;
+use libipld::cbor::DagCbor;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use siwe::TimeStamp;
@@ -269,7 +270,7 @@ pub fn cacao_to_zcap<S: SignatureScheme>(
     cacao: &CACAO<S>,
 ) -> Result<Delegation<(), CacaoZcapExtraProps>, CacaoToZcapError>
 where
-    S::Signature: AsRef<[u8]>,
+    S::Signature: AsRef<[u8]> + DagCbor,
 {
     let header = cacao.header();
     let Payload {
@@ -585,7 +586,7 @@ pub fn zcap_to_cacao<S: SignatureScheme>(
     zcap: &Delegation<(), CacaoZcapExtraProps>,
 ) -> Result<CACAO<S>, ZcapToCacaoError>
 where
-    S::Signature: TryFrom<Vec<u8>>,
+    S::Signature: TryFrom<Vec<u8>> + DagCbor,
 {
     let Delegation {
         context: contexts,

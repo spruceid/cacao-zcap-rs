@@ -28,6 +28,7 @@ hex = "0.4"
 anyhow = "1.0"
 iri-string = { version = "0.4", features = ["serde", "serde-std"] }
 percent-encoding = "2.1"
+libipld = "0.12"
 
 [dev-dependencies]
 pretty_assertions = "1.2"

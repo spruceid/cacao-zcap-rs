@@ -30,7 +30,7 @@ jobs:
         repository: spruceid/cacao-rs
         token: ${{ secrets.SPRUCE_CEL_PRIVATE_REPOS_2022 }}
         path: cacao-rs
-        ref: c48b68faccb885f270b0e34f37b61c1b66d48c6a
+        ref: 61b02a7b0eb0b4b75c04553cbf4f045066d4f1ad
 
     - name: Checkout ssi
       uses: actions/checkout@v2
