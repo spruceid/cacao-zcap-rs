@@ -896,14 +896,12 @@ mod tests {
     use cacao::BasicSignature;
     use pretty_assertions::assert_eq;
     use siwe::Message;
-    use ssi::ldp::resolve_vm;
 
     pub struct ExampleDIDPKH;
     use async_trait::async_trait;
     use ssi::did::{DIDMethod, Document};
     use ssi::did_resolve::{
-        DIDResolver, DocumentMetadata, ResolutionInputMetadata, ResolutionMetadata,
-        ERROR_NOT_FOUND, TYPE_DID_LD_JSON,
+        DIDResolver, DocumentMetadata, ResolutionInputMetadata, ResolutionMetadata, ERROR_NOT_FOUND,
     };
     const EXAMPLE_DID: &str = "did:pkh:eip155:1:0x6da01670d8fc844e736095918bbe11fe8d564163";
     const DOC_JSON: &str = r#"
