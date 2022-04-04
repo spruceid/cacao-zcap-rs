@@ -149,6 +149,13 @@ section:target {
 			<tr>
 				<td>p.requestId</td>
 				<td>=</td>
+				<td>requestId</td>
+				<td>no</td>
+			</tr>
+
+			<tr>
+				<td>CID(p.requestId)</td>
+				<td>=</td>
 				<td>id</td>
 				<td>no</td>
 			</tr>
@@ -245,6 +252,7 @@ section:target {
 			<a href="https://w3id.org/security#invocationTarget">invocationTarget</a>,
 			<a href="https://w3id.org/security#expiration">expires</a>,
 			<a href="#cacaoStatement">cacaoStatement</a>,
+			<a href="#cacaoRequestId">cacaoRequestId</a>,
 			<a href="https://w3id.org/security#proof">proof</a>
 		</dd>
         </dl>
@@ -297,6 +305,17 @@ section:target {
 	<section id="cacaoStatement">
 	<h3><a href="#cacaoStatement">cacaoStatement</a></h3>
 	<p>CACAO statement (CACAO payload "statement" value).</p>
+        <dl>
+		<dt><a href="https://www.w3.org/2003/06/sw-vocab-status/note.html#vocab">Status</a></dt>
+		<dd>unstable</dd>
+		<dt>Expected type</dt>
+		<dd><a href="https://www.w3.org/TR/xmlschema11-2/#string">xsd:string</a></dd>
+	</dl>
+	</section>
+
+	<section id="cacaoRequestId">
+	<h3><a href="#cacaoRequestId">cacaoRequestId</a></h3>
+	<p>CACAO request ID (CACAO payload "requestId" value).</p>
         <dl>
 		<dt><a href="https://www.w3.org/2003/06/sw-vocab-status/note.html#vocab">Status</a></dt>
 		<dd>unstable</dd>

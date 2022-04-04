@@ -3,7 +3,12 @@ use cacao::siwe_cacao::SignInWithEthereum;
 use cacao::{Header, Payload, SignatureScheme, Version as CacaoVersion, CACAO};
 use chrono::prelude::DateTime;
 use iri_string::types::UriString;
-use libipld::cbor::DagCbor;
+use libipld::{
+    cbor::{DagCbor, DagCborCodec},
+    multihash::{Code::Sha2_256, MultihashDigest},
+    prelude::Codec,
+    Cid,
+};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use siwe::TimeStamp;
@@ -18,9 +23,12 @@ use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 use thiserror::Error;
+use uuid::{adapter::Urn, Builder, Bytes};
 
 pub const PROOF_TYPE_2022: &str = "CacaoZcapProof2022";
 pub const CONTEXT_URL_V1: &str = "https://demo.didkit.dev/2022/cacao-zcap/context/v1.json";
+
+const MULTICODEDC_DAG_CBOR: u64 = 0x71;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -67,6 +75,13 @@ pub struct CacaoZcapExtraProps {
     /// [EIP-4361]: https://eips.ethereum.org/EIPS/eip-4361#message-field-descriptions
     #[serde(skip_serializing_if = "Option::is_none")]
     pub cacao_statement: Option<String>,
+
+    /// CACAO request ID.
+    ///
+    /// CACAO payload "requestId" value
+    /// SIWE "system-specific identifier that may be used to uniquely refer to the sign-in request"
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cacao_request_id: Option<String>,
 }
 
 /// An item for [CacaoZcapProofExtraProps::capability_chain]
@@ -224,12 +239,6 @@ pub enum CacaoToZcapError {
     #[error("Unable to convert CACAO proof extra properties")]
     ConvertProofExtraProps(#[source] CacaoZcapProofConvertError),
 
-    /// Delegation is missing id
-    ///
-    /// zcap delegation object must have an id property.
-    #[error("Delegation is missing id")]
-    MissingId,
-
     /// Missing first resource
     ///
     /// CACAO-zcap must have at least one resource URI.
@@ -265,6 +274,32 @@ fn get_header_and_signature_type(header: &Header) -> Result<(String, String), Ca
     }
 }
 
+/// Derive a UUID from a CACAO's CID
+///
+/// RFC 4122 v4 UUID, using first 16 bytes of CID as the pseudo-random bytes.
+/// The 4-byte CID prefix (for v1 DagCbor CID with SHA-256) corresponds to the UUID prefix "01711220-".
+pub fn cacao_cid_uuid<S: SignatureScheme>(cacao: &CACAO<S>) -> Urn
+where
+    S::Signature: DagCbor,
+{
+    let cacao_dagcbor_bytes = DagCborCodec.encode(cacao).unwrap();
+    let cacao_mhash = Sha2_256.digest(&cacao_dagcbor_bytes);
+    let cid = Cid::new_v1(MULTICODEDC_DAG_CBOR, cacao_mhash);
+    let cid_bytes = cid.to_bytes();
+    // Use the CID as pseudo-random bytes for RFC 4122 UUID.
+    let mut uuid_bytes: Bytes = [0; 16];
+    // UUID has 16 bytes, minus the 6 bits that are overwritten to set the version and variant per
+    // RFC 4122.
+    // CID is 36 bytes, that is 1 for the version, 1 for the type (dag-cbor), 1 for the hash type
+    // (sha2-256), 1 for the hash length (32 bytes), and then 32 for the SHA-256 hash.
+    // This initial 4 bytes for the CID prefix corresponds to the initial "01711220-" in the UUID.
+    uuid_bytes.copy_from_slice(&cid_bytes[0..16]);
+    // RFC 4122 doesn't have a variant for SHA-256 or multibase anything, so we use the "Random" variant.
+    // https://datatracker.ietf.org/doc/html/rfc4122.html#section-4.1.3
+    let uuid = Builder::from_bytes(uuid_bytes).build();
+    uuid.to_urn()
+}
+
 /// Convert a CACAO to a Zcap (delegation)
 pub fn cacao_to_zcap<S: SignatureScheme>(
     cacao: &CACAO<S>,
@@ -283,7 +318,7 @@ where
         iat,
         exp: exp_opt,
         nbf: nbf_opt,
-        request_id: req_id_opt,
+        request_id: request_id_opt,
         resources,
     } = cacao.payload();
     match version {
@@ -296,8 +331,8 @@ where
     let exp_string_opt = exp_opt.as_ref().map(|ts| ts.to_string());
 
     let (header_type, signature_type) = get_header_and_signature_type(header)?;
-    let request_id = req_id_opt.as_ref().ok_or(CacaoToZcapError::MissingId)?;
-    let id = URI::String(request_id.to_string());
+    let uuid = cacao_cid_uuid(&cacao);
+    let id = URI::String(uuid.to_string());
     let mut iter = resources.iter();
     let (first_resource, last_resource, intermediate_resources) = (
         iter.next().ok_or(CacaoToZcapError::MissingFirstResource)?,
@@ -365,6 +400,7 @@ where
         invocation_target: invocation_target.to_string(),
         cacao_payload_type: header_type,
         cacao_statement: statement_opt.clone(),
+        cacao_request_id: request_id_opt.clone(),
     };
     let mut delegation = Delegation {
         context: Contexts::Many(vec![
@@ -517,6 +553,16 @@ pub enum ZcapToCacaoError {
     /// Unable to convert capability chain item to resource URI
     #[error("Unable to convert capability chain item to resource URI")]
     CapToResource(#[source] CapToResourceError),
+
+    /// UUID CID mismatch
+    #[error("UUID CID mismatch. Computed: '{computed}' but found: '{found}'")]
+    UuidCidMismatch {
+        /// Computed this UUID-CID
+        computed: String,
+
+        /// Found this id in the delegation id
+        found: String,
+    },
 }
 
 /// Root URN for authorization capability
@@ -602,6 +648,7 @@ where
         valid_from: valid_from_opt,
         cacao_payload_type,
         cacao_statement: cacao_statement_opt,
+        cacao_request_id,
     } = zcap_extraprops;
     let proof = zcap.proof.as_ref().ok_or(ZcapToCacaoError::MissingProof)?;
     let proof_extraprops =
@@ -752,10 +799,18 @@ where
         iat,
         exp: exp_opt,
         nbf: nbf_opt,
-        request_id: Some(id.to_string()),
+        request_id: cacao_request_id.clone(),
         resources,
     };
     let cacao = payload.sign::<S>(signature);
+    let id_str = id.as_str();
+    let expected_uuid = cacao_cid_uuid(&cacao).to_string();
+    if id_str != expected_uuid {
+        return Err(ZcapToCacaoError::UuidCidMismatch {
+            found: id_str.to_string(),
+            computed: expected_uuid,
+        });
+    }
     Ok(cacao)
 }
 
