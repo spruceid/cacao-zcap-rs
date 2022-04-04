@@ -154,8 +154,8 @@ section:target {
 			</tr>
 
 			<tr>
-				<td>CID(p.requestId)</td>
-				<td>=</td>
+				<td>.</td>
+				<td><a href="#id-cid-uuid-mapping">CID &rarr;</a></td>
 				<td>id</td>
 				<td>no</td>
 			</tr>
@@ -204,6 +204,21 @@ section:target {
 
 		</tbody>
 	</table>
+
+	<section id="id-cid-uuid-mapping">
+	<h3><a href="#id-cid-uuid-mapping">id CID UUID mapping</a></h3>
+	<p>The CACAO is serialized as
+	<a href="https://ipld.io/specs/codecs/dag-cbor/">DAG-CBOR</a>.
+	A <a href="https://github.com/multiformats/cid#cidv1">v1 CID</a>
+	is computed over the serialized CACAO using
+	<a href="https://github.com/multiformats/multicodec/blob/f5dd49f35b26b447aa380e9a491f195fd49d912c/table.csv#L9"
+	  title="sha2-256 entry in the Multicodec table">SHA-256</a>.
+	The first 16 bytes of the CID (dropping the remaining 20) is
+	used as "pseudo-random" input to a
+	<a href="https://datatracker.ietf.org/doc/html/rfc4122#section-4.4">v4 UUID</a>.
+	The resulting UUID as a string begins with the prefix "01711220-".
+	The UUID is prefixed with "urn:uuid:" to become a URN URI. That URN URI is used as the id of the delegation object.</p>
+	</section>
 
 	<section id="iss-vm-mapping">
 	<h3><a href="#iss-vm-mapping">issuer-verificationMethod mapping</a></h3>
