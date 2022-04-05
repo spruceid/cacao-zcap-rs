@@ -30,6 +30,7 @@ iri-string = { version = "0.4", features = ["serde", "serde-std"] }
 percent-encoding = "2.1"
 libipld = "0.12"
 uuid = { version = "0.8", features = ["v4", "serde"] }
+sha2 = "0.9"
 
 [dev-dependencies]
 pretty_assertions = "1.2"

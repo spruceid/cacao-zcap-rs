@@ -5,9 +5,7 @@ use chrono::prelude::DateTime;
 use iri_string::types::UriString;
 use libipld::{
     cbor::{DagCbor, DagCborCodec},
-    multihash::{Code::Sha2_256, MultihashDigest},
     prelude::Codec,
-    Cid,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -27,8 +25,6 @@ use uuid::{adapter::Urn, Builder, Bytes};
 
 pub const PROOF_TYPE_2022: &str = "CacaoZcapProof2022";
 pub const CONTEXT_URL_V1: &str = "https://demo.didkit.dev/2022/cacao-zcap/context/v1.json";
-
-const MULTICODEDC_DAG_CBOR: u64 = 0x71;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -276,24 +272,21 @@ fn get_header_and_signature_type(header: &Header) -> Result<(String, String), Ca
 
 /// Derive a UUID from a CACAO's CID
 ///
-/// RFC 4122 v4 UUID, using last 16 bytes of CID as the pseudo-random bytes.
+/// RFC 4122 v4 UUID, using last 16 bytes of the hash of the DAG-CBOR serialization of the CACAO as the pseudo-random bytes.
 pub fn cacao_cid_uuid<S: SignatureScheme>(cacao: &CACAO<S>) -> Urn
 where
     S::Signature: DagCbor,
 {
     let cacao_dagcbor_bytes = DagCborCodec.encode(cacao).unwrap();
-    let cacao_mhash = Sha2_256.digest(&cacao_dagcbor_bytes);
-    let cid = Cid::new_v1(MULTICODEDC_DAG_CBOR, cacao_mhash);
-    let cid_bytes = cid.to_bytes();
-    // Use the CID as pseudo-random bytes for a RFC 4122 UUID.
+    use sha2::{Digest, Sha256};
+    let mut hasher = Sha256::new();
+    hasher.update(&cacao_dagcbor_bytes);
+    let hash = hasher.finalize().to_vec();
+    // Use the hash as pseudo-random bytes for a RFC 4122 UUID.
     let mut uuid_bytes: Bytes = [0; 16];
     // UUID has 16 bytes, minus the 6 bits that are overwritten to set the version and variant per
-    // RFC 4122.
-    // CID is 36 bytes, that is 1 for the version, 1 for the type (dag-cbor), 1 for the hash type
-    // (sha2-256), 1 for the hash length (32 bytes), and then 32 for the SHA-256 hash.
-    // But we don't include those prefix bytes in the UUID since
-    // they are low entropy; instead, the suite fixes these parameters to specific values.
-    uuid_bytes.copy_from_slice(&cid_bytes[20..36]);
+    // RFC 4122. Use the last 16 bytes of the hash.
+    uuid_bytes.copy_from_slice(&hash[16..32]);
     // Using the "RFC 4122" variant and version 4.
     // https://datatracker.ietf.org/doc/html/rfc4122.html#section-4.1.3
     let uuid = Builder::from_bytes(uuid_bytes).build();
