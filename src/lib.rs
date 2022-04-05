@@ -276,8 +276,7 @@ fn get_header_and_signature_type(header: &Header) -> Result<(String, String), Ca
 
 /// Derive a UUID from a CACAO's CID
 ///
-/// RFC 4122 v4 UUID, using first 16 bytes of CID as the pseudo-random bytes.
-/// The 4-byte CID prefix (for v1 DagCbor CID with SHA-256) corresponds to the UUID prefix "01711220-".
+/// RFC 4122 v4 UUID, using last 16 bytes of CID as the pseudo-random bytes.
 pub fn cacao_cid_uuid<S: SignatureScheme>(cacao: &CACAO<S>) -> Urn
 where
     S::Signature: DagCbor,
@@ -286,15 +285,16 @@ where
     let cacao_mhash = Sha2_256.digest(&cacao_dagcbor_bytes);
     let cid = Cid::new_v1(MULTICODEDC_DAG_CBOR, cacao_mhash);
     let cid_bytes = cid.to_bytes();
-    // Use the CID as pseudo-random bytes for RFC 4122 UUID.
+    // Use the CID as pseudo-random bytes for a RFC 4122 UUID.
     let mut uuid_bytes: Bytes = [0; 16];
     // UUID has 16 bytes, minus the 6 bits that are overwritten to set the version and variant per
     // RFC 4122.
     // CID is 36 bytes, that is 1 for the version, 1 for the type (dag-cbor), 1 for the hash type
     // (sha2-256), 1 for the hash length (32 bytes), and then 32 for the SHA-256 hash.
-    // This initial 4 bytes for the CID prefix corresponds to the initial "01711220-" in the UUID.
-    uuid_bytes.copy_from_slice(&cid_bytes[0..16]);
-    // RFC 4122 doesn't have a variant for SHA-256 or multibase anything, so we use the "Random" variant.
+    // But we don't include those prefix bytes in the UUID since
+    // they are low entropy; instead, the suite fixes these parameters to specific values.
+    uuid_bytes.copy_from_slice(&cid_bytes[20..36]);
+    // Using the "RFC 4122" variant and version 4.
     // https://datatracker.ietf.org/doc/html/rfc4122.html#section-4.1.3
     let uuid = Builder::from_bytes(uuid_bytes).build();
     uuid.to_urn()
