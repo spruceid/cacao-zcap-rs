@@ -21,7 +21,7 @@ use std::collections::HashMap;
 use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 use thiserror::Error;
-use uuid::{adapter::Urn, Builder, Bytes};
+use uuid::adapter::Urn;
 
 pub const PROOF_TYPE_2022: &str = "CacaoZcapProof2022";
 pub const CONTEXT_URL_V1: &str = "https://demo.didkit.dev/2022/cacao-zcap/context/v1.json";
@@ -283,13 +283,16 @@ where
     hasher.update(&cacao_dagcbor_bytes);
     let hash = hasher.finalize().to_vec();
     // Use the hash as pseudo-random bytes for a RFC 4122 UUID.
-    let mut uuid_bytes: Bytes = [0; 16];
+    let mut uuid_bytes: uuid::Bytes = [0; 16];
     // UUID has 16 bytes, minus the 6 bits that are overwritten to set the version and variant per
     // RFC 4122. Use the last 16 bytes of the hash.
     uuid_bytes.copy_from_slice(&hash[16..32]);
     // Using the "RFC 4122" variant and version 4.
     // https://datatracker.ietf.org/doc/html/rfc4122.html#section-4.1.3
-    let uuid = Builder::from_bytes(uuid_bytes).build();
+    let uuid = uuid::Builder::from_bytes(uuid_bytes)
+        .set_variant(uuid::Variant::RFC4122)
+        .set_version(uuid::Version::Random)
+        .build();
     uuid.to_urn()
 }
 
