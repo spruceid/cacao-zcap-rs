@@ -4,12 +4,13 @@
     "https://demo.didkit.dev/2022/cacao-zcap/context/v1.json"
   ],
   "cacaoPayloadType": "eip4361",
+  "cacaoRequestId": "https://example.org/siwe/123123213",
   "cacaoStatement": "Allow access to your Kepler orbit",
   "expires": "2049-01-01T00:00:00Z",
-  "id": "urn:uuid:457d190c-c0ad-4b03-a14c-b6bec0dd5792",
+  "id": "urn:uuid:076d7929-6c3f-4596-9853-c32d4c412204",
   "invocationTarget": "kepler://my_orbit",
   "invoker": "did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp#z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp",
-  "parentCapability": "urn:uuid:5fa2f8cc-fea0-4280-b98c-99f0acecf0e1",
+  "parentCapability": "urn:uuid:f6076745-00e9-475b-bd97-53245c9be61a",
   "proof": {
     "cacaoSignatureType": "eip191",
     "capabilityChain": [
@@ -20,9 +21,10 @@
           "https://demo.didkit.dev/2022/cacao-zcap/context/v1.json"
         ],
         "cacaoPayloadType": "eip4361",
+        "cacaoRequestId": "https://example.org/delegations/981871674",
         "cacaoStatement": "Allow access to your Kepler orbit",
         "expires": "2022-03-14T13:32:42.763Z",
-        "id": "urn:uuid:5fa2f8cc-fea0-4280-b98c-99f0acecf0e1",
+        "id": "urn:uuid:f6076745-00e9-475b-bd97-53245c9be61a",
         "invocationTarget": "kepler://my_orbit",
         "invoker": "did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp#z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp",
         "parentCapability": "urn:zcap:root:kepler%3A%2F%2Fmy_orbit",

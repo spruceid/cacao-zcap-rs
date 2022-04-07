@@ -12,7 +12,8 @@
         "id": "@id",
         "type": "@type",
         "cacaoPayloadType": "https://demo.didkit.dev/2022/cacao-zcap/#cacaoPayloadType",
-        "cacaoStatement": "https://demo.didkit.dev/2022/cacao-zcap/#cacaoStatement"
+        "cacaoStatement": "https://demo.didkit.dev/2022/cacao-zcap/#cacaoStatement",
+        "cacaoRequestId": "https://demo.didkit.dev/2022/cacao-zcap/#cacaoRequestId"
       }
     },
     "CacaoZcapProof2022": {
