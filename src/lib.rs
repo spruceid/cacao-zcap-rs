@@ -1,6 +1,6 @@
 use async_trait::async_trait;
-use cacao::siwe_cacao::SignInWithEthereum;
-use cacao::{Header, Payload, SignatureScheme, Version as CacaoVersion, CACAO};
+use cacaos::siwe_cacao::SignInWithEthereum;
+use cacaos::{Header, Payload, SignatureScheme, Version as CacaoVersion, CACAO};
 use chrono::prelude::DateTime;
 use iri_string::types::UriString;
 use libipld::{
@@ -944,7 +944,7 @@ impl ProofSuite for CacaoZcapProof2022 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use cacao::BasicSignature;
+    use cacaos::BasicSignature;
     use pretty_assertions::assert_eq;
     use siwe::Message;
 
