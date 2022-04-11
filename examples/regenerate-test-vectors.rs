@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
-use cacao::siwe_cacao::SignInWithEthereum;
-use cacao::BasicSignature;
-use cacao::{Payload, CACAO};
+use cacaos::siwe_cacao::SignInWithEthereum;
+use cacaos::BasicSignature;
+use cacaos::{Payload, CACAO};
 use cacao_zcap::{cacao_to_zcap, CapabilityChainItem};
 use siwe::Message;
 use std::fs::File;
