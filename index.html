@@ -162,22 +162,29 @@ section:target {
 
 			<tr>
 				<td>p.resources[0]</td>
+				<td><a href="#CacaoZcapResource2022">"https://demo.didkit.dev/2022/cacao-zcap/#CacaoZcapResource2022"</a></td>
+				<td>&ndash;</td>
+				<td>yes</td>
+			</tr>
+
+			<tr>
+				<td>p.resources[1]</td>
 				<td>=</td>
 				<td>invocationTarget</td>
 				<td>yes</td>
 			</tr>
 
 			<tr>
-				<td>p.resources[0]</td>
+				<td>p.resources[1]</td>
 				<td><a href="#root-zcap-mapping">URL &harr; ZCAP Root URN</a></td>
 				<td>proof.capabilityChain[0]</td>
 				<td>no</td>
 			</tr>
 
 			<tr>
-				<td>p.resources[1..n-2]</td>
+				<td>p.resources[2..n-2]</td>
 				<td><a href="#intermediate-zcap-mapping">=</a></td>
-				<td>proof.capabilityChain[1..n-2]</td>
+				<td>proof.capabilityChain[2..n-2]</td>
 				<td>no</td>
 			</tr>
 
@@ -225,12 +232,12 @@ section:target {
 
 	<section id="root-zcap-mapping">
 	<h3><a href="#root-zcap-mapping">Root ZCAP mapping</a></h3>
-	<p>The first value of the CACAO payload resources array is used as the invocation target URI, that is the value of the zcap delegation's <code>invocationTarget</code> property. The invocation target URI is encoded into a root zcap URN to become the root capability id. The root zcap URN is constructed as the concatenation of <code>"urn:zcap:root:"</code> with <code>encodeURIComponent(invocationTarget)</code>. To transform the root zcap URN to the invocation target URI, the prefix <code>"urn:zcap:root:"</code> is removed and the remaining value is URL-decoded to return the invocation target id.</p>
+	<p>The second value of the CACAO payload resources array is used as the invocation target URI, that is the value of the zcap delegation's <code>invocationTarget</code> property. The invocation target URI is encoded into a root zcap URN to become the root capability id, which appears as the first value in the ZCAP <code>capabilityChain</code>. The root zcap URN is constructed as the concatenation of <code>"urn:zcap:root:"</code> with <code>encodeURIComponent(invocationTarget)</code>. To transform the root zcap URN to the invocation target URI, the prefix <code>"urn:zcap:root:"</code> is removed and the remaining value is URL-decoded to return the invocation target id.</p>
 	</section>
 
 	<section id="intermediate-zcap-mapping">
 	<h3><a href="#intermediate-zcap-mapping">Intermediate ZCAP mapping</a></h3>
-	<p>If the proof <code>capabilityChain</code> array / CACAO resources array (<code>p.resources</code>) contain more than two elements,
+	<p>If the proof <code>capabilityChain</code> array contains three or more elements (<a href="#previous-zcap-mapping">root id</a>, [...], <a href="#previous-zcap-mapping">previous delegation</a>) / CACAO resources array (<code>p.resources</code>) contains four or more elements (<a href="#CacaoZcapResource2022">type identifier</a>, <a href="#root-zcap-mapping">invocation target</a>, [...], <a href="#previous-zcap-mapping">previous delegation</a>),
 	the intermediate elements are passed through as URIs.</p>
 	</section>
 
@@ -290,6 +297,11 @@ section:target {
 			<a href="#cacaoSignatureType">cacaoSignatureType</a>
 		</dd>
         </dl>
+	</section>
+
+	<section id="CacaoZcapResource2022">
+	<h3><a href="#CacaoZcapResource2022">CacaoZcapResource2022</a></h3>
+	<p>This type URI when used as the first value of a CACAO resources array indicates that the CACAO may be converted to a ZCAP according to this specification.</p>
 	</section>
 
 	<section id="cacaoPayloadType">
