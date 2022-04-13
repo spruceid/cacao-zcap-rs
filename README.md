@@ -1,6 +1,6 @@
 # CACAO-ZCAP
 
-Rust implementation, and specification draft.
+Rust implementation of [CACAO-ZCAP].
 
 ## License
 
