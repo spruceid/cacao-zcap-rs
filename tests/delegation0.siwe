@@ -1,7 +1,7 @@
 app.domain.com wants you to sign in with your Ethereum account:
 0x98626187D3B8e1F7C5b246eE443a07579b5923Ac
 
-Allow access to your Kepler orbit
+Authorize action (read, write): Allow access to your Kepler orbit
 
 URI: did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp#z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp
 Version: 1

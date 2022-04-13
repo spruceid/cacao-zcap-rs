@@ -15,6 +15,7 @@ use ssi::error::Error as SSIError;
 use ssi::jsonld::SECURITY_V2_CONTEXT;
 use ssi::jwk::JWK;
 use ssi::ldp::{LinkedDataDocument, ProofPreparation, ProofSuite, VerificationWarnings};
+use ssi::one_or_many::OneOrMany;
 use ssi::vc::{LinkedDataProofOptions, Proof, ProofPurpose, URI};
 use ssi::zcap::{Context, Contexts, Delegation};
 use std::collections::HashMap;
@@ -61,16 +62,27 @@ pub struct CacaoZcapExtraProps {
     /// CACAO header "t" value
     pub cacao_payload_type: String,
 
-    /// CACAO statement
+    /// zCap allowed actions
     ///
-    /// [CACAO] payload "statement" value
+    /// <https://w3id.org/security#allowedAction>
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub allowed_action: Option<OneOrMany<String>>,
+
+    /// CACAO-ZCAP substatement
+    ///
+    /// Part of a [CACAO] payload "statement" value
     ///
     /// In [EIP-4361], statement is defined as a "human-readable ASCII assertion that the user will sign".
     ///
+    /// CACAO-ZCAP requires the CACAO statement to match a format containing an optional a list of
+    /// [allowed actions](CacaoZcapExtraProps::allowed_action) and an optional
+    /// [substatement string](CacaoZcapExtraProps::cacao_zcap_substatement).
+    ///
+    /// [CACAO-ZCAP]: https://demo.didkit.dev/2022/cacao-zcap/
     /// [CACAO]: https://github.com/ChainAgnostic/CAIPs/blob/8fdb5bfd1bdf15c9daf8aacfbcc423533764dfe9/CAIPs/caip-draft_cacao.md#container-format
     /// [EIP-4361]: https://eips.ethereum.org/EIPS/eip-4361#message-field-descriptions
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub cacao_statement: Option<String>,
+    pub cacao_zcap_substatement: Option<String>,
 
     /// CACAO request ID.
     ///
@@ -206,6 +218,110 @@ impl CacaoZcapProofExtraProps {
     }
 }
 
+#[derive(Clone, Debug)]
+struct CacaoZcapStatement {
+    /// zCap [allowedAction](CacaoZcapExtraProps::allowed_action) values
+    pub actions: Option<OneOrMany<String>>,
+
+    /// CACAO-ZCAP [substatement](CacaoZcapExtraProps::cacao_zcap_substatement)
+    pub substatement: Option<String>,
+}
+impl CacaoZcapStatement {
+    /// Construct cacao-zcap statement
+    pub fn from_actions_and_substatement_opt(
+        substmt: Option<&str>,
+        actions: Option<&OneOrMany<String>>,
+    ) -> Self {
+        Self {
+            actions: actions.cloned(),
+            substatement: substmt.map(|s| s.to_string()),
+        }
+    }
+
+    /// Serialize to a CACAO statement string, or None if there is no actions or substatement
+    pub fn to_string_opt(&self) -> Option<String> {
+        if self.actions.is_some() && self.substatement.is_some() {
+            Some(format!("{}", self))
+        } else {
+            None
+        }
+    }
+}
+
+impl Display for CacaoZcapStatement {
+    fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
+        write!(f, "Authorize action")?;
+        if let Some(actions) = self.actions.as_ref() {
+            write!(f, " (")?;
+            let mut actions_iter = actions.into_iter();
+            if let Some(action) = actions_iter.next() {
+                write!(f, "{}", action)?;
+            }
+            for action in actions_iter {
+                write!(f, ", {}", action)?;
+            }
+            write!(f, ")")?;
+        }
+        if let Some(substatement) = self.substatement.as_ref() {
+            write!(f, ": {}", substatement)?;
+        }
+        Ok(())
+    }
+}
+
+/// Error from attempting to parse a [CacaoZcapStatement]
+#[derive(Error, Debug)]
+pub enum CacaoZcapStatementParseError {
+    /// Unexpected statement prefix
+    #[error("Unexpected statement prefix")]
+    UnexpectedPrefix,
+
+    /// Expected separator
+    #[error("Expected separator before substatement")]
+    ExpectedSeparatorBeforeSubstatement,
+
+    /// Expected separator after actions
+    #[error("Expected separator after actions")]
+    ExpectedSeparatorAfterActions,
+}
+
+impl FromStr for CacaoZcapStatement {
+    type Err = CacaoZcapStatementParseError;
+    fn from_str(stmt: &str) -> Result<Self, Self::Err> {
+        let mut s = stmt
+            .strip_prefix("Authorize action")
+            .ok_or(CacaoZcapStatementParseError::UnexpectedPrefix)?;
+
+        let actions = if let Some(after_paren) = s.strip_prefix(" (") {
+            let (actions_to_split, after_actions) = after_paren
+                .split_once(')')
+                .ok_or(CacaoZcapStatementParseError::ExpectedSeparatorAfterActions)?;
+            s = after_actions;
+            Some(OneOrMany::Many(
+                actions_to_split
+                    .split(", ")
+                    .map(String::from)
+                    .collect::<Vec<String>>(),
+            ))
+        } else {
+            None
+        };
+        let substatement = if s.is_empty() {
+            None
+        } else {
+            Some(
+                s.strip_prefix(": ")
+                    .ok_or(CacaoZcapStatementParseError::ExpectedSeparatorBeforeSubstatement)?
+                    .to_string(),
+            )
+        };
+        Ok(Self {
+            actions,
+            substatement,
+        })
+    }
+}
+
 /// Error from converting to [CACAO to a Zcap](cacao_to_zcap)
 #[derive(Error, Debug)]
 pub enum CacaoToZcapError {
@@ -256,6 +372,10 @@ pub enum CacaoToZcapError {
     /// Unable to parse root capability id as URI
     #[error("Unable to parse root capability id as URI")]
     RootCapUriParse(#[source] iri_string::validate::Error),
+
+    /// Unable to parse CACAO-ZCAP statement string
+    #[error("Unable to parse CACAO-ZCAP statement string")]
+    StatementParse(#[source] CacaoZcapStatementParseError),
 }
 
 fn get_header_and_signature_type(header: &Header) -> Result<(String, String), CacaoToZcapError> {
@@ -323,6 +443,15 @@ where
         _ => return Err(CacaoToZcapError::UnknownCacaoVersion),
     }
     let signature = cacao.signature();
+
+    let (substatement_opt, allowed_action_opt) = if let Some(statement) = statement_opt {
+        let cacao_zcap_stmt =
+            CacaoZcapStatement::from_str(statement).map_err(CacaoToZcapError::StatementParse)?;
+        (cacao_zcap_stmt.substatement, cacao_zcap_stmt.actions)
+    } else {
+        (None, None)
+    };
+
     let valid_from_opt = nbf_opt.as_ref().map(|nbf| nbf.to_string());
     let exp_string_opt = exp_opt.as_ref().map(|ts| ts.to_string());
 
@@ -395,7 +524,8 @@ where
         valid_from: valid_from_opt,
         invocation_target: invocation_target.to_string(),
         cacao_payload_type: header_type,
-        cacao_statement: statement_opt.clone(),
+        allowed_action: allowed_action_opt,
+        cacao_zcap_substatement: substatement_opt,
         cacao_request_id: request_id_opt.clone(),
     };
     let mut delegation = Delegation {
@@ -643,9 +773,16 @@ where
         expires: expires_opt,
         valid_from: valid_from_opt,
         cacao_payload_type,
-        cacao_statement: cacao_statement_opt,
+        cacao_zcap_substatement: cacao_zcap_substatement_opt,
+        allowed_action: allowed_action_opt,
         cacao_request_id,
     } = zcap_extraprops;
+
+    let stmt = CacaoZcapStatement::from_actions_and_substatement_opt(
+        cacao_zcap_substatement_opt.as_ref().map(|s| s.as_str()),
+        allowed_action_opt.as_ref(),
+    );
+
     let proof = zcap.proof.as_ref().ok_or(ZcapToCacaoError::MissingProof)?;
     let proof_extraprops =
         CacaoZcapProofExtraProps::from_property_set_opt(proof.property_set.clone())
@@ -785,7 +922,7 @@ where
     let payload = Payload {
         domain: domain.to_string().try_into().unwrap(),
         iss: issuer.try_into().map_err(ZcapToCacaoError::IssuerParse)?,
-        statement: cacao_statement_opt.clone(),
+        statement: stmt.to_string_opt(),
         aud: invoker
             .as_str()
             .try_into()
