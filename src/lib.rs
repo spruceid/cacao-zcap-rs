@@ -27,6 +27,10 @@ use thiserror::Error;
 use uuid::adapter::Urn;
 
 /// [Type](https://www.w3.org/TR/json-ld11/#specifying-the-type) term
+/// for [CacaoZcap2022](https://demo.didkit.dev/2022/cacao-zcap/#CacaoZcap2022)
+pub const DELEGATION_TYPE_2022: &str = "CacaoZcap2022";
+
+/// [Type](https://www.w3.org/TR/json-ld11/#specifying-the-type) term
 /// for [CacaoZcapProof2022]
 pub const PROOF_TYPE_2022: &str = "CacaoZcapProof2022";
 
@@ -534,7 +538,7 @@ where
         ..Proof::new(PROOF_TYPE_2022)
     };
     let delegation_extraprops = CacaoZcapExtraProps {
-        r#type: String::from("CacaoZcap2022"),
+        r#type: String::from(DELEGATION_TYPE_2022),
         expires: exp_string_opt,
         valid_from: valid_from_opt,
         invocation_target: invocation_target.to_string(),
@@ -816,10 +820,10 @@ where
         domain: domain_opt,
         ..
     } = proof;
-    if zcap_type != "CacaoZcap2022" {
+    if zcap_type != DELEGATION_TYPE_2022 {
         return Err(ZcapToCacaoError::UnknownDelegationType);
     }
-    if proof_type != "CacaoZcapProof2022" {
+    if proof_type != PROOF_TYPE_2022 {
         return Err(ZcapToCacaoError::UnknownDelegationProofType);
     }
     let combined_type = format!("{}-{}", cacao_payload_type, cacao_signature_type);
