@@ -101,7 +101,7 @@ pub enum CapabilityChainItem {
     Object(Delegation<(), CacaoZcapExtraProps>),
 }
 
-/// Error from converting to [Zcap to a CACAO](zcap_to_cacao)
+/// Error [converting ZCAP to CACAO](zcap_to_cacao)
 #[derive(Error, Debug)]
 pub enum CapToResourceError {
     /// Unable to serialize delegation
@@ -113,6 +113,7 @@ pub enum CapToResourceError {
     UriParse(#[source] iri_string::validate::Error),
 }
 
+/// Error [converting a CACAO resource URI to a delegation object](CapabilityChainItem::from_resource_uri)
 #[derive(Error, Debug)]
 pub enum CapFromResourceError {
     /// Expected JSON base64 data URI
@@ -149,6 +150,7 @@ impl CapabilityChainItem {
         }
     }
 
+    /// Convert a [CACAO resource](Payload::resources) URI to a [delegation](Delegation) object
     pub fn from_resource_uri(uri: &UriString) -> Result<Self, CapFromResourceError> {
         let uri_string = uri.to_string();
         let b64_json = uri_string
@@ -176,7 +178,7 @@ pub struct CacaoZcapProofExtraProps {
     pub cacao_signature_type: String,
 }
 
-/// Error from converting between [CacaoZcapProofConvertError] and [Proof::property_set] value
+/// Error converting [Proof properties](Proof::property_set) to [CacaoZcapProofExtraProps]
 #[derive(Error, Debug)]
 pub enum CacaoZcapProofConvertError {
     /// Unable to convert HashMap to Value
@@ -271,7 +273,7 @@ impl Display for CacaoZcapStatement {
     }
 }
 
-/// Error from attempting to parse a [CacaoZcapStatement]
+/// Error [parsing CacaoZcapStatement](CacaoZcapStatement::from_str)
 #[derive(Error, Debug)]
 pub enum CacaoZcapStatementParseError {
     /// Unexpected statement prefix
@@ -324,7 +326,7 @@ impl FromStr for CacaoZcapStatement {
     }
 }
 
-/// Error from converting to [CACAO to a Zcap](cacao_to_zcap)
+/// Error converting [CACAO to a Zcap](cacao_to_zcap)
 #[derive(Error, Debug)]
 pub enum CacaoToZcapError {
     /// Unknown CACAO version. Expected v1.
@@ -542,7 +544,7 @@ where
     Ok(delegation)
 }
 
-/// Error from converting to [Zcap to a CACAO](zcap_to_cacao)
+/// Error converting [ZCAP to CACAO](zcap_to_cacao)
 #[derive(Error, Debug)]
 pub enum ZcapToCacaoError {
     /// Delegation object is missing a proof object
@@ -701,7 +703,7 @@ pub struct ZcapRootURN {
     pub target: UriString,
 }
 
-/// Error from attempting to parse a [ZcapRootURN]
+/// Error [parsing ZcapRootURN](ZcapRootURN::from_str)
 #[derive(Error, Debug)]
 pub enum ZcapRootURNParseError {
     /// Unable to parse [root URI](ZcapRootURN)
