@@ -1,3 +1,5 @@
+//! [CACAO-ZCAP](https://demo.didkit.dev/2022/cacao-zcap/) implementation
+
 use async_trait::async_trait;
 use cacaos::siwe_cacao::SignInWithEthereum;
 use cacaos::{Header, Payload, SignatureScheme, Version as CacaoVersion, CACAO};
@@ -24,9 +26,17 @@ use std::str::FromStr;
 use thiserror::Error;
 use uuid::adapter::Urn;
 
+/// [Type](https://www.w3.org/TR/json-ld11/#specifying-the-type) term
+/// for [CacaoZcapProof2022]
 pub const PROOF_TYPE_2022: &str = "CacaoZcapProof2022";
+
+/// JSON-LD [Context](https://www.w3.org/TR/json-ld11/#the-context) URL
+/// for [CACAO-ZCAP suite](https://demo.didkit.dev/2022/cacao-zcap/),
+/// version 1
 pub const CONTEXT_URL_V1: &str = "https://demo.didkit.dev/2022/cacao-zcap/context/v1.json";
 
+/// [Extra properties](Delegation::property_set) for a zCap delegation
+/// object
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 #[serde(deny_unknown_fields)]
@@ -92,7 +102,7 @@ pub struct CacaoZcapExtraProps {
     pub cacao_request_id: Option<String>,
 }
 
-/// An item for [CacaoZcapProofExtraProps::capability_chain]
+/// An item in a [proof capabilityChain array](CacaoZcapProofExtraProps::capability_chain)
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 #[serde(untagged)]
@@ -163,6 +173,7 @@ impl CapabilityChainItem {
     }
 }
 
+/// [Extra properties](Proof::property_set) for a proof object
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 #[serde(deny_unknown_fields)]
@@ -178,7 +189,7 @@ pub struct CacaoZcapProofExtraProps {
     pub cacao_signature_type: String,
 }
 
-/// Error converting [Proof properties](Proof::property_set) to [CacaoZcapProofExtraProps]
+/// Error [converting Proof to CacaoZcapProofExtraProps](CacaoZcapProofExtraProps::from_property_set_opt)
 #[derive(Error, Debug)]
 pub enum CacaoZcapProofConvertError {
     /// Unable to convert HashMap to Value
@@ -199,7 +210,7 @@ pub enum CacaoZcapProofConvertError {
 }
 
 impl CacaoZcapProofExtraProps {
-    fn from_property_set_opt(
+    pub fn from_property_set_opt(
         pso: Option<HashMap<String, Value>>,
     ) -> Result<Self, CacaoZcapProofConvertError> {
         let value =
@@ -220,7 +231,7 @@ impl CacaoZcapProofExtraProps {
     }
 }
 
-/// A CACAO [statement](Payload::statement) for CACAO-ZCAP
+/// A [CACAO statement](Payload::statement) for CACAO-ZCAP
 #[derive(Clone, Debug)]
 pub struct CacaoZcapStatement {
     /// zCap [allowedAction](CacaoZcapExtraProps::allowed_action) values
@@ -326,7 +337,7 @@ impl FromStr for CacaoZcapStatement {
     }
 }
 
-/// Error converting [CACAO to a Zcap](cacao_to_zcap)
+/// Error [converting CACAO to a Zcap](cacao_to_zcap)
 #[derive(Error, Debug)]
 pub enum CacaoToZcapError {
     /// Unknown CACAO version. Expected v1.
@@ -544,7 +555,7 @@ where
     Ok(delegation)
 }
 
-/// Error converting [ZCAP to CACAO](zcap_to_cacao)
+/// Error [converting ZCAP to CACAO](zcap_to_cacao)
 #[derive(Error, Debug)]
 pub enum ZcapToCacaoError {
     /// Delegation object is missing a proof object
@@ -951,6 +962,8 @@ where
     Ok(cacao)
 }
 
+/// [CacaoZcapProof2022](https://demo.didkit.dev/2022/cacao-zcap/#CacaoZcapProof2022) proof suite
+/// implementation
 pub struct CacaoZcapProof2022;
 #[cfg_attr(target_arch = "wasm32", async_trait(?Send))]
 #[cfg_attr(not(target_arch = "wasm32"), async_trait)]
