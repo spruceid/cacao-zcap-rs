@@ -218,14 +218,16 @@ impl CacaoZcapProofExtraProps {
     }
 }
 
+/// A CACAO [statement](Payload::statement) for CACAO-ZCAP
 #[derive(Clone, Debug)]
-struct CacaoZcapStatement {
+pub struct CacaoZcapStatement {
     /// zCap [allowedAction](CacaoZcapExtraProps::allowed_action) values
     pub actions: Option<OneOrMany<String>>,
 
     /// CACAO-ZCAP [substatement](CacaoZcapExtraProps::cacao_zcap_substatement)
     pub substatement: Option<String>,
 }
+
 impl CacaoZcapStatement {
     /// Construct cacao-zcap statement
     pub fn from_actions_and_substatement_opt(
