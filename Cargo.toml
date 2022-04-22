@@ -10,17 +10,22 @@ keywords = ["linked-data", "zcap", "cacao", "authorization"]
 description = "Integration of CACAO with ZCAP"
 repository = "https://github.com/spruceid/cacao-zcap-rs/"
 
+[features]
+default = ["bidirectional", "verify"]
+cacao2zcap = []
+zcap2cacao = []
+bidirectional = ["cacao2zcap", "zcap2cacao"]
+verify = ["zcap2cacao"]
+
 [dependencies]
-ssi = { version = ">=0.3, <0.5", path = "../ssi" }
-cacaos = "0.1"
+ssi = { version = ">=0.3, <0.5", default-features = false, features = ["sha", "rand"] }
+cacaos = { path = "../cacao-rs" } # version 0.2 when it is released
 uint = "=0.9.1"
-chrono = "0.4"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 serde_jcs = "0.1"
 base64 = "0.12"
 thiserror = "1.0"
-siwe = { version = "0.2" }
 async-std = { version = "1.9", features = ["attributes"] }
 async-trait = "0.1"
 multibase = "0.8"
@@ -31,6 +36,12 @@ percent-encoding = "2.1"
 libipld = "0.12"
 uuid = { version = "0.8", features = ["v4", "serde"] }
 sha2 = "0.9"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+chrono = "0.4"
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+chrono = { version = "0.4", features = ["wasmbind"] }
 
 [dev-dependencies]
 pretty_assertions = "1.2"
