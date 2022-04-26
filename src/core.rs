@@ -252,7 +252,7 @@ impl CacaoZcapStatement {
 
     /// Serialize to a CACAO statement string, or None if there is no actions or substatement
     pub fn to_string_opt(&self) -> Option<String> {
-        if self.actions.is_some() && self.substatement.is_some() {
+        if self.actions.is_some() || self.substatement.is_some() {
             Some(format!("{}", self))
         } else {
             None
