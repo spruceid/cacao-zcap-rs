@@ -1,13 +1,22 @@
 use std::str::FromStr;
 
-use cacaos::{SignatureScheme, CACAO, Payload, Version as CacaoVersion, Header};
+use cacaos::{Header, Payload, SignatureScheme, Version as CacaoVersion, CACAO};
 use chrono::DateTime;
 use iri_string::types::UriString;
 use libipld::cbor::DagCbor;
-use ssi::{zcap::{Delegation, Context, Contexts}, vc::{URI, Proof, ProofPurpose}, jsonld::SECURITY_V2_CONTEXT, one_or_many::OneOrMany};
+use ssi::{
+    jsonld::SECURITY_V2_CONTEXT,
+    one_or_many::OneOrMany,
+    vc::{Proof, ProofPurpose, URI},
+    zcap::{Context, Contexts, Delegation},
+};
 use thiserror::Error;
 
-use crate::{CacaoZcapExtraProps, CacaoZcapStatement, CONTEXT_URL_V1, DELEGATION_TYPE_2022, PROOF_TYPE_2022, CacaoZcapProofExtraProps, CapFromResourceError, cacao_cid_uuid, ZcapRootURN, CapabilityChainItem, CacaoZcapProofConvertError};
+use crate::{
+    cacao_cid_uuid, CacaoZcapExtraProps, CacaoZcapProofConvertError, CacaoZcapProofExtraProps,
+    CacaoZcapStatement, CapFromResourceError, CapabilityChainItem, ZcapRootURN, CONTEXT_URL_V1,
+    DELEGATION_TYPE_2022, PROOF_TYPE_2022,
+};
 
 /// Convert a CACAO to a Zcap (delegation)
 pub fn cacao_to_zcap<S: SignatureScheme>(
@@ -49,7 +58,7 @@ where
     let exp_string_opt = exp_opt.as_ref().map(|ts| ts.to_string());
 
     let (header_type, signature_type) = get_header_and_signature_type(header)?;
-    let uuid = cacao_cid_uuid(&cacao);
+    let uuid = cacao_cid_uuid(cacao);
     let id = URI::String(uuid.to_string());
     let mut iter = resources.iter();
     let (first_resource, last_resource, intermediate_resources) = (

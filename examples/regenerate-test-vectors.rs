@@ -1,9 +1,10 @@
 use anyhow::{Context, Result};
+use cacao_zcap::translation::cacao2zcap::cacao_to_zcap;
+use cacao_zcap::CapabilityChainItem;
+use cacaos::siwe::Message;
 use cacaos::siwe_cacao::SignInWithEthereum;
 use cacaos::BasicSignature;
 use cacaos::{Payload, CACAO};
-use cacao_zcap::{cacao_to_zcap, CapabilityChainItem};
-use siwe::Message;
 use std::fs::File;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};

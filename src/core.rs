@@ -1,14 +1,20 @@
-use std::{fmt::{Display, Formatter}, str::FromStr, collections::HashMap};
+use std::{
+    collections::HashMap,
+    fmt::{Display, Formatter},
+    str::FromStr,
+};
 
 use cacaos::{SignatureScheme, CACAO};
 use iri_string::types::UriString;
-use libipld::{cbor::{DagCbor, DagCborCodec}, codec::Codec};
-use serde::{Serialize, Deserialize};
+use libipld::{
+    cbor::{DagCbor, DagCborCodec},
+    codec::Codec,
+};
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use ssi::{zcap::Delegation, one_or_many::OneOrMany, vc::URI};
+use ssi::{one_or_many::OneOrMany, vc::URI, zcap::Delegation};
 use thiserror::Error;
 use uuid::adapter::Urn;
-
 
 /// [Type](https://www.w3.org/TR/json-ld11/#specifying-the-type) term
 /// for [CacaoZcap2022](https://demo.didkit.dev/2022/cacao-zcap/#CacaoZcap2022)
@@ -64,7 +70,10 @@ impl CapabilityChainItem {
     pub fn id(&self) -> &str {
         match self {
             Self::Id(string) => string.as_str(),
-            Self::Object(delegation) => { let URI::String(s) = &delegation.id; s},
+            Self::Object(delegation) => {
+                let URI::String(s) = &delegation.id;
+                s
+            }
         }
     }
 

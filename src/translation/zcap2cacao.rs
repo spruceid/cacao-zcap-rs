@@ -1,14 +1,21 @@
 use std::str::FromStr;
 
-use cacaos::{SignatureScheme, CACAO, Payload, Version as CacaoVersion};
 use cacaos::siwe::TimeStamp;
+use cacaos::{Payload, SignatureScheme, Version as CacaoVersion, CACAO};
 use iri_string::types::UriString;
 use libipld::cbor::DagCbor;
-use ssi::{zcap::{Delegation, Contexts, Context}, vc::{Proof, URI, ProofPurpose}, jsonld::SECURITY_V2_CONTEXT};
+use ssi::{
+    jsonld::SECURITY_V2_CONTEXT,
+    vc::{Proof, ProofPurpose, URI},
+    zcap::{Context, Contexts, Delegation},
+};
 use thiserror::Error;
 
-use crate::{CacaoZcapExtraProps, CacaoZcapStatement, CacaoZcapProofExtraProps, DELEGATION_TYPE_2022, PROOF_TYPE_2022, CONTEXT_URL_V1, ZcapRootURN, cacao_cid_uuid, CapToResourceError, ZcapRootURNParseError, CacaoZcapProofConvertError};
-
+use crate::{
+    cacao_cid_uuid, CacaoZcapExtraProps, CacaoZcapProofConvertError, CacaoZcapProofExtraProps,
+    CacaoZcapStatement, CapToResourceError, ZcapRootURN, ZcapRootURNParseError, CONTEXT_URL_V1,
+    DELEGATION_TYPE_2022, PROOF_TYPE_2022,
+};
 
 /// Convert a zcap delegation to a CACAO
 pub fn zcap_to_cacao<S: SignatureScheme>(

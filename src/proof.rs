@@ -3,10 +3,19 @@ use std::collections::HashMap;
 use async_trait::async_trait;
 use cacaos::siwe_cacao::SignInWithEthereum;
 use serde_json::Value;
-use ssi::{ldp::{ProofSuite, LinkedDataDocument, ProofPreparation}, vc::{LinkedDataProofOptions, Proof}, did_resolve::DIDResolver, jwk::JWK, error::Error as SSIError, jws::VerificationWarnings, zcap::Delegation};
+use ssi::{
+    did_resolve::DIDResolver,
+    error::Error as SSIError,
+    jwk::JWK,
+    jws::VerificationWarnings,
+    ldp::{LinkedDataDocument, ProofPreparation, ProofSuite},
+    vc::{LinkedDataProofOptions, Proof},
+    zcap::Delegation,
+};
 
-use crate::{CacaoZcapProofExtraProps, CacaoZcapExtraProps, translation::zcap2cacao::zcap_to_cacao};
-
+use crate::{
+    translation::zcap2cacao::zcap_to_cacao, CacaoZcapExtraProps, CacaoZcapProofExtraProps,
+};
 
 /// [CacaoZcapProof2022](https://demo.didkit.dev/2022/cacao-zcap/#CacaoZcapProof2022) proof suite
 /// implementation
