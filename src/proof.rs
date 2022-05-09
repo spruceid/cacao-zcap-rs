@@ -14,7 +14,7 @@ use ssi::{
 };
 
 use crate::{
-    translation::zcap2cacao::zcap_to_cacao, CacaoZcapExtraProps, CacaoZcapProofExtraProps,
+    translation::zcap_to_cacao::zcap_to_cacao, CacaoZcapExtraProps, CacaoZcapProofExtraProps,
 };
 
 /// [CacaoZcapProof2022](https://demo.didkit.dev/2022/cacao-zcap/#CacaoZcapProof2022) proof suite

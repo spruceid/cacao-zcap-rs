@@ -29,6 +29,9 @@ pub const PROOF_TYPE_2022: &str = "CacaoZcapProof2022";
 /// version 1
 pub const CONTEXT_URL_V1: &str = "https://demo.didkit.dev/2022/cacao-zcap/context/v1.json";
 
+/// Type alias for a CacaoZcap2022 delegation.
+pub type CacaoZcap2022Delegation = Delegation<(), CacaoZcapExtraProps>;
+
 /// An item in a [proof capabilityChain array](CacaoZcapProofExtraProps::capability_chain)
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -292,7 +295,7 @@ where
     use sha2::{Digest, Sha256};
     let mut hasher = Sha256::new();
     hasher.update(&cacao_dagcbor_bytes);
-    let hash = hasher.finalize().to_vec();
+    let hash: [u8; 32] = *hasher.finalize().as_ref();
     // Use the hash as pseudo-random bytes for a RFC 4122 UUID.
     let mut uuid_bytes: uuid::Bytes = [0; 16];
     // UUID has 16 bytes, minus the 6 bits that are overwritten to set the version and variant per

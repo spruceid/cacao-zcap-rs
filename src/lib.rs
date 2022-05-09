@@ -25,8 +25,8 @@ mod tests {
         DIDResolver, DocumentMetadata, ResolutionInputMetadata, ResolutionMetadata, ERROR_NOT_FOUND,
     };
 
-    use crate::translation::cacao2zcap::cacao_to_zcap;
-    use crate::translation::zcap2cacao::zcap_to_cacao;
+    use crate::translation::cacao_to_zcap::cacao_to_zcap;
+    use crate::translation::zcap_to_cacao::zcap_to_cacao;
     use crate::CapabilityChainItem;
     const EXAMPLE_DID: &str = "did:pkh:eip155:1:0x6da01670d8fc844e736095918bbe11fe8d564163";
     const DOC_JSON: &str = r#"

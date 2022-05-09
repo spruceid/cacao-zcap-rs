@@ -1,4 +1,4 @@
-#[cfg(feature = "cacao2zcap")]
-pub mod cacao2zcap;
-#[cfg(feature = "zcap2cacao")]
-pub mod zcap2cacao;
+#[cfg(feature = "cacao_to_zcap")]
+pub mod cacao_to_zcap;
+#[cfg(feature = "zcap_to_cacao")]
+pub mod zcap_to_cacao;

@@ -12,10 +12,10 @@ repository = "https://github.com/spruceid/cacao-zcap-rs/"
 
 [features]
 default = ["bidirectional", "verify"]
-cacao2zcap = []
-zcap2cacao = []
-bidirectional = ["cacao2zcap", "zcap2cacao"]
-verify = ["zcap2cacao"]
+cacao_to_zcap = []
+zcap_to_cacao = []
+bidirectional = ["cacao_to_zcap", "zcap_to_cacao"]
+verify = ["zcap_to_cacao"]
 
 [dependencies]
 uint = "=0.9.1"
@@ -38,14 +38,14 @@ sha2 = "0.9"
 [dependencies.ssi]
 version = ">=0.3, <0.5"
 default-features = false
-features = ["sha", "rand"]
+features = ["sha2"]
 git = "https://github.com/spruceid/ssi.git"
 rev = "4c30f1a"
 
 [dependencies.cacaos]
 version = "0.2"
 git = "https://github.com/spruceid/cacao-rs.git"
-rev = "dbd49f7"
+rev = "2715184"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 chrono = "0.4"
