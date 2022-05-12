@@ -27,7 +27,7 @@ pub const PROOF_TYPE_2022: &str = "CacaoZcapProof2022";
 /// JSON-LD [Context](https://www.w3.org/TR/json-ld11/#the-context) URL
 /// for [CACAO-ZCAP suite](https://demo.didkit.dev/2022/cacao-zcap/),
 /// version 1
-pub const CONTEXT_URL_V1: &str = "https://demo.didkit.dev/2022/cacao-zcap/context/v1.json";
+pub const CONTEXT_URL_V1: &str = "https://demo.didkit.dev/2022/cacao-zcap/contexts/v1.json";
 
 /// Type alias for a CacaoZcap2022 delegation.
 pub type CacaoZcap2022Delegation = Delegation<(), CacaoZcapExtraProps>;

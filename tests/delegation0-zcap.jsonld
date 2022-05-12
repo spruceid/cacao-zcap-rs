@@ -1,7 +1,7 @@
 {
   "@context": [
     "https://w3id.org/security/v2",
-    "https://demo.didkit.dev/2022/cacao-zcap/context/v1.json"
+    "https://demo.didkit.dev/2022/cacao-zcap/contexts/v1.json"
   ],
   "allowedAction": [
     "read",

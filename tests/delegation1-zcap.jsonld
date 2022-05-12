@@ -1,13 +1,13 @@
 {
   "@context": [
     "https://w3id.org/security/v2",
-    "https://demo.didkit.dev/2022/cacao-zcap/context/v1.json"
+    "https://demo.didkit.dev/2022/cacao-zcap/contexts/v1.json"
   ],
   "cacaoPayloadType": "eip4361",
   "cacaoRequestId": "https://example.org/siwe/123123213",
   "cacaoZcapSubstatement": "Allow access to your Kepler orbit",
   "expires": "2049-01-01T00:00:00Z",
-  "id": "urn:uuid:db74a464-4292-4202-b781-c43d71c26760",
+  "id": "urn:uuid:19bb6675-351a-412f-985b-7ba7b534cf47",
   "invocationTarget": "kepler://my_orbit",
   "invoker": "did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp#z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp",
   "parentCapability": "urn:uuid:0807b7fa-0ca6-445c-99f6-f9c6d015b675",
@@ -18,7 +18,7 @@
       {
         "@context": [
           "https://w3id.org/security/v2",
-          "https://demo.didkit.dev/2022/cacao-zcap/context/v1.json"
+          "https://demo.didkit.dev/2022/cacao-zcap/contexts/v1.json"
         ],
         "allowedAction": [
           "read",
