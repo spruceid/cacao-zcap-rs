@@ -1,5 +1,5 @@
 use anyhow::{Context, Result};
-use cacao_zcap::translation::cacao2zcap::cacao_to_zcap;
+use cacao_zcap::translation::cacao_to_zcap::cacao_to_zcap;
 use cacao_zcap::CapabilityChainItem;
 use cacaos::siwe::Message;
 use cacaos::siwe_cacao::SignInWithEthereum;
